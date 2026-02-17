@@ -6,3 +6,4 @@
 *.log
 tools/.venv
 server/.venv
+example/Makeblock-Libraries
