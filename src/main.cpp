@@ -137,6 +137,9 @@ void init_app(void) {
     // Start network daemon after WiFi init
     startNetworkDaemon();
     startHeartbeatDaemon();
+
+    // Starting DHCP Client Configuration
+    // Starting DHCP ID Client Configuration
 }
 
 extern "C" void app_main(void) {
@@ -151,5 +154,13 @@ extern "C" void app_main(void) {
         vTaskDelay(pdMS_TO_TICKS(10000));  // 10 second interval
 
         ESP_LOGI(TAG, "Doing some work in the main loop..., IP: %s", g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "Not connected");
+
+        // Using Makeblock-Libary for actual hardware interaction (e.g., sensors, actuators) would go here
+
+        // As test. Try to disconnect to WiFi.
+        if (g_wifi->isConnected()) {
+            ESP_LOGI(TAG, "Disconnecting WiFi to test reconnect logic...");
+            g_wifi->disconnect();
+        }
     }
 }

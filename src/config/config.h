@@ -2,6 +2,7 @@
 // WLAN configuration
 #define WLAN_SSID "Vodafone-9A6C"
 #define WLAN_PASSWORD "nFxDLFAv4jYpDbgt"
+#define ONLINE_MANDATORY true
 
 // Server configuration
 #define SERVER "192.168.0.70" 

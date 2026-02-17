@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "esp_log.h"
+#include "../../config/config.h"
 
 WiFiConnect::WiFiConnect() : connected(false) {}
 
@@ -30,6 +31,15 @@ bool WiFiConnect::isConnected() {
 }
 
 void WiFiConnect::disconnect() {
+    if (!isConnected()) {
+        ESP_LOGI("WIFI", "Already disconnected");
+        return;
+    }
+
+    if (ONLINE_MANDATORY) {
+         ESP_LOGW("WIFI", "Online mandatory is enabled, skipping disconnect!");
+        return;
+    }
     WiFi.disconnect();
     connected = false;
     ESP_LOGI("WIFI", "Disconnected");
