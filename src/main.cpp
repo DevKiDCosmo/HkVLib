@@ -2,12 +2,10 @@
 #include <Arduino.h>
 #include "connectivity/wifi/wifi.h"
 #include "network/request.h"
+#include "config/config.h"
 
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
-
-#define SERVER "192.168.0.70" 
-#define PORT 8080
 
 // Global WiFi instance shared between main and daemon
 WiFiConnect *g_wifi = nullptr;
@@ -124,8 +122,8 @@ void init_app(void) {
     // Initialize WiFi using Arduino library
     ESP_LOGI(TAG, "Initializing WiFi...");
     g_wifi = new WiFiConnect();
-    g_ssid = "Vodafone-9A6C";
-    g_password = "nFxDLFAv4jYpDbgt";
+    g_ssid = WLAN_SSID;
+    g_password = WLAN_PASSWORD;
 
     if (g_wifi->connect(g_ssid, g_password)) {
         ESP_LOGI(TAG, "WiFi connected successfully");
