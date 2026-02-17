@@ -5,6 +5,9 @@
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
 
+#define SERVER "192.168.0.70" 
+#define PORT 8080
+
 // Global WiFi instance shared between main and daemon
 WiFiConnect *g_wifi = nullptr;
 const char *g_ssid = nullptr;
@@ -66,7 +69,35 @@ void startNetworkDaemon(void) {
     ESP_LOGI(TAG, "Network daemon started");
 }
 
-void init(void) {
+void heartbeatDaemonTask(void *pvParameters) {
+    ESP_LOGI("HEARTBEAT", "Heartbeat daemon started on Core %d", xPortGetCoreID());
+    
+    while (true) {
+        ESP_LOGI("HEARTBEAT", "System is alive - Free heap: %d bytes", esp_get_free_heap_size());
+        vTaskDelay(pdMS_TO_TICKS(30000));  // Every 30 seconds
+
+        // Send api request to SERVER:PORT/heartbeat
+    }
+}
+
+void startHeartbeatDaemon(void) {
+    ESP_LOGI(TAG, "Starting heartbeat daemon...");
+    
+    // Create a simple heartbeat task on Core 1
+    xTaskCreatePinnedToCore(
+        heartbeatDaemonTask,
+        "HeartbeatDaemon",
+        2048,
+        NULL,
+        1,
+        NULL,
+        1
+    );
+    
+    ESP_LOGI(TAG, "Heartbeat daemon started");
+}
+
+void init_app(void) {
     // Initialize Arduino framework
     initArduino();
     ESP_LOGI(TAG, "Arduino framework initialized");
@@ -74,8 +105,8 @@ void init(void) {
     // Initialize WiFi using Arduino library
     ESP_LOGI(TAG, "Initializing WiFi...");
     g_wifi = new WiFiConnect();
-    g_ssid = "YourNetworkName";
-    g_password = "YourNetworkPassword";
+    g_ssid = "Vodafone-9A6C";
+    g_password = "nFxDLFAv4jYpDbgt";
 
     if (g_wifi->connect(g_ssid, g_password)) {
         ESP_LOGI(TAG, "WiFi connected successfully");
@@ -88,6 +119,7 @@ void init(void) {
     
     // Start network daemon after WiFi init
     startNetworkDaemon();
+    startHeartbeatDaemon();
 }
 
 extern "C" void app_main(void) {
@@ -98,7 +130,7 @@ extern "C" void app_main(void) {
     ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
     ESP_LOGI(TAG, "=================================");
 
-    init();
+    init_app();
 
     // Main loop runs independently on Core 1
     ESP_LOGI(TAG, "Main loop starting on Core %d", xPortGetCoreID());
