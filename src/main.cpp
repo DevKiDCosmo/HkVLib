@@ -1,6 +1,7 @@
 #include "esp_log.h"
 #include <Arduino.h>
 #include "connectivity/wifi/wifi.h"
+#include "network/request.h"
 
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
@@ -72,11 +73,22 @@ void startNetworkDaemon(void) {
 void heartbeatDaemonTask(void *pvParameters) {
     ESP_LOGI("HEARTBEAT", "Heartbeat daemon started on Core %d", xPortGetCoreID());
     
+    // Initialize HTTP client with server configuration
+    HttpRequest httpClient(SERVER, PORT);
+    
     while (true) {
         ESP_LOGI("HEARTBEAT", "System is alive - Free heap: %d bytes", esp_get_free_heap_size());
+        
+        // Send heartbeat request to SERVER:PORT/heartbeat
+        HttpResponse response = httpClient.get("/heartbeat");
+        if (response.success) {
+            ESP_LOGI("HEARTBEAT", "Heartbeat sent successfully - Status: %d, Response: %s", 
+                     response.statusCode, response.body.c_str());
+        } else {
+            ESP_LOGE("HEARTBEAT", "Heartbeat failed - Status: %d", response.statusCode);
+        }
+        
         vTaskDelay(pdMS_TO_TICKS(30000));  // Every 30 seconds
-
-        // Send api request to SERVER:PORT/heartbeat
     }
 }
 
