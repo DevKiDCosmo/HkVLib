@@ -99,7 +99,7 @@ void startHeartbeatDaemon(void) {
     xTaskCreatePinnedToCore(
         heartbeatDaemonTask,
         "HeartbeatDaemon",
-        2048,
+        8192,
         NULL,
         1,
         NULL,
@@ -110,6 +110,13 @@ void startHeartbeatDaemon(void) {
 }
 
 void init_app(void) {
+    // ESP-IDF native logging (no Arduino dependency)
+    setup_serial();
+    ESP_LOGI(TAG, "=================================");
+    ESP_LOGI(TAG, "HkVLib Firmware Starting");
+    ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
+    ESP_LOGI(TAG, "=================================");
+
     // Initialize Arduino framework
     initArduino();
     ESP_LOGI(TAG, "Arduino framework initialized");
@@ -135,20 +142,16 @@ void init_app(void) {
 }
 
 extern "C" void app_main(void) {
-    // ESP-IDF native logging (no Arduino dependency)
-    setup_serial();
-    ESP_LOGI(TAG, "=================================");
-    ESP_LOGI(TAG, "HkVLib Firmware Starting");
-    ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "=================================");
-
     init_app();
 
     // Main loop runs independently on Core 1
     ESP_LOGI(TAG, "Main loop starting on Core %d", xPortGetCoreID());
     while (true) {
+
         // Main application logic goes here
         ESP_LOGI(TAG, "Main loop - Free heap: %d bytes", esp_get_free_heap_size());
         vTaskDelay(pdMS_TO_TICKS(10000));  // 10 second interval
+
+        ESP_LOGI(TAG, "Doing some work in the main loop..., IP: %s", g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "Not connected");
     }
 }
