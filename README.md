@@ -508,3 +508,9 @@ For technical issues during competition:
 1. Check self-test results on `mbot/<id>/test`
 2. Review fault logs on `mbot/<id>/fault`
 3. Contact technical staff via competition channel
+
+
+
+## More function.
+Health and Battery also
+Serial Command Palette

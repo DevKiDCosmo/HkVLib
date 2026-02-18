@@ -32,8 +32,15 @@
 #define TEAM_NAME ""
 #define DEVICE_NAME ""
 
+// Forward declaration (full definition in connectivity/wifi/wifi.h)
+class WiFiConnect;
+
 // GLOBAL Variables (defined in main.cpp)
 extern int DEVICE_ID;
 extern String MAC_ADDR;
+
+extern WiFiConnect *g_wifi;
+extern String g_ssid;
+extern String g_password;
 
 #endif // CONFIG_H

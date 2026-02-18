@@ -5,6 +5,8 @@
 #include "config/config.h"
 #include "esp_wifi.h"
 
+#include "daemon/daemon.h"
+
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
 
@@ -22,165 +24,6 @@ static void setup_serial(void)
 {
     esp_log_level_set(TAG, ESP_LOG_INFO);
     esp_log_level_set(NET_TAG, ESP_LOG_INFO);
-}
-
-// Network daemon task - runs asynchronously on Core 0
-void networkDaemonTask(void *pvParameters)
-{
-    ESP_LOGI(NET_TAG, "Network daemon started on Core %d", xPortGetCoreID());
-
-    // Wait a moment for initialization to complete
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    while (true)
-    {
-        if (g_wifi != nullptr && g_ssid.length() > 0 && g_password.length() > 0)
-        {
-            // Check WiFi status periodically
-            if (!g_wifi->isConnected())
-            {
-                ESP_LOGW(NET_TAG, "WiFi disconnected! Attempting reconnect...");
-                if (g_wifi->connect(g_ssid, g_password))
-                {
-                    ESP_LOGI(NET_TAG, "WiFi reconnected. IP: %s", g_wifi->getLocalIP().c_str());
-                }
-                else
-                {
-                    ESP_LOGE(NET_TAG, "WiFi reconnect failed!");
-                }
-
-                // TODO: ONLINE_LOCK logic
-            }
-            else
-            {
-                // WiFi is connected - just log status occasionally
-                static int counter = 0;
-                if (++counter % 12 == 0)
-                { // Every 60 seconds
-                    ESP_LOGI(NET_TAG, "WiFi OK - IP: %s", g_wifi->getLocalIP().c_str());
-                    counter = 0;
-                }
-            }
-        }
-
-        // Check every 5 seconds
-        vTaskDelay(pdMS_TO_TICKS(WLAN_PRIORITY * 1000)); // Convert seconds to milliseconds
-    }
-}
-
-void startNetworkDaemon(void)
-{
-    ESP_LOGI(TAG, "Starting network daemon...");
-
-    // Create network daemon task on Core 0
-    // Stack size: 4096 bytes, Priority: 1 (low), Core: 0
-    xTaskCreatePinnedToCore(
-        networkDaemonTask, // Task function
-        "NetworkDaemon",   // Task name
-        4096,              // Stack size
-        NULL,              // Parameter
-        1,                 // Priority
-        NULL,              // Task handle
-        0                  // Core 0
-    );
-
-    ESP_LOGI(TAG, "Network daemon started");
-}
-
-void heartbeatDaemonTask(void *pvParameters)
-{
-    ESP_LOGI("HEARTBEAT", "Heartbeat daemon started on Core %d", xPortGetCoreID());
-
-    // Initialize HTTP client with server configuration
-    HttpRequest httpClient(SERVER, PORT);
-
-    while (true)
-    {
-        ESP_LOGI("HEARTBEAT", "System is alive - Free heap: %d bytes", esp_get_free_heap_size());
-
-        // Send heartbeat request to SERVER:PORT/heartbeat
-        HttpResponse response = httpClient.get("/heartbeat");
-        if (response.success)
-        {
-            ESP_LOGI("HEARTBEAT", "Heartbeat sent successfully - Status: %d, Response: %s",
-                     response.statusCode, response.body.c_str());
-        }
-        else
-        {
-            ESP_LOGE("HEARTBEAT", "Heartbeat failed - Status: %d", response.statusCode);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(30000)); // Every 30 seconds
-    }
-}
-
-void startHeartbeatDaemon(void)
-{
-    ESP_LOGI(TAG, "Starting heartbeat daemon...");
-
-    // Create a simple heartbeat task on Core 1
-    xTaskCreatePinnedToCore(
-        heartbeatDaemonTask,
-        "HeartbeatDaemon",
-        8192,
-        NULL,
-        1,
-        NULL,
-        1);
-
-    ESP_LOGI(TAG, "Heartbeat daemon started");
-}
-
-void serialInputDaemonTask(void *pvParameters)
-{
-    ESP_LOGI("SERIAL", "Serial input daemon started on Core %d", xPortGetCoreID());
-
-    while (true)
-    {
-        if (Serial.available() > 0)
-        {
-            String input = Serial.readStringUntil('\n');
-            input.trim();
-            ESP_LOGI("SERIAL", "Received command: %s", input.c_str());
-
-            // Process commands here
-            if (input.equalsIgnoreCase("wifi status"))
-            {
-                if (g_wifi != nullptr)
-                {
-                    ESP_LOGI("SERIAL", "WiFi Status: %s, IP: %s",
-                             g_wifi->isConnected() ? "Connected" : "Disconnected",
-                             g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "N/A");
-                }
-                else
-                {
-                    ESP_LOGW("SERIAL", "WiFi not initialized");
-                }
-            }
-            else if (input.equalsIgnoreCase("reboot"))
-            {
-                ESP_LOGI("SERIAL", "Rebooting system...");
-                esp_restart();
-            }
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(100)); // Check for input every 100ms
-    }
-}
-
-void startSerialInputDaemon(void)
-{
-    ESP_LOGI(TAG, "Starting serial input daemon...");
-
-    // Create a simple serial input task on Core 1
-    xTaskCreatePinnedToCore(
-        serialInputDaemonTask,
-        "SerialInputDaemon",
-        4096,
-        NULL,
-        1,
-        NULL,
-        1);
 }
 
 void dhcpID(void)
@@ -273,11 +116,12 @@ void init_app(void)
 
     // Start network daemon after WiFi init
     ESP_LOGI(TAG, "Starting daemons...");
-    startNetworkDaemon();
-    startHeartbeatDaemon();
+
+    Daemon::startNetworkDaemon();
+    Daemon::startHeartbeatDaemon();
 
     // Start serial input daemon for immediate command processing.
-    startSerialInputDaemon();
+    Daemon::startSerialInputDaemon();
 
     // Starting DHCP Client Configuration
 
