@@ -9,6 +9,7 @@
 #include "network/gid.h"
 #include "app.h"
 #include "onlinelock/onlinelock.h"
+#include "daemon/health/health.h"
 
 #define APP_OPERATION_ID 0x01 // Operation ID for main app loop
 
@@ -97,6 +98,9 @@ void init_app(void)
     Daemon::startgIDDaemon();
 
     // Unit Test
+
+    // Start Health Daemons
+    HealthDaemons::startHealthDaemons();
 
     // Init Extensive Platform
 }

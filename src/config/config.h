@@ -20,6 +20,9 @@
 #define HEARTBEAT_SERVER_AVAIBILITY 30 // in s
 #define HEARTBEAT_DEVICE_AVAIBILITY 10 // in s
 
+// Daemon Interval Configuration
+#define HEALTH_WIFI_DAEMON 10 // in s
+
 // Firmware
 #define BUILD "12203984"
 #define DATE "02/18/2026"

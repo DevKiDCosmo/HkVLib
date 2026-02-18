@@ -58,4 +58,6 @@ void Daemon::startSerialInputDaemon(void)
         1,
         NULL,
         1);
+
+    ESP_LOGI(PRIV_DAEMON_TAG, "Serial input daemon started");
 }

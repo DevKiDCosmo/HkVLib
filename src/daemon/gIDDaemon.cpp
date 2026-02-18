@@ -4,7 +4,7 @@
 #include "../network/request.h"
 #include <Arduino.h>
 
-const char *PRIV_DAEMON_TAG = "gIDDaemon";
+static const char *PRIV_DAEMON_TAG = "gIDDaemon";
 
 void gIDDaemonTask(void *pvParameters)
 {
@@ -14,7 +14,7 @@ void gIDDaemonTask(void *pvParameters)
     while (true)
     {
         String macStr = MAC_ADDR;
-        String endpoint = "/id/" + macStr + "/" + String(TEAMID);
+        String endpoint = "/heartbeat/" + macStr + "/" + String(DEVICE_ID);
         HttpResponse response = httpClient.get(endpoint);
 
         if (response.success)
