@@ -15,7 +15,10 @@ static void heartbeatDaemonTask(void *pvParameters)
 
     while (true)
     {
-        ESP_LOGI(PRIV_DAEMON_TAG, "System is alive - Free heap: %d bytes", esp_get_free_heap_size());
+        if (DEBUG_FLAG_EXTENSIVE)
+        {
+            ESP_LOGI(PRIV_DAEMON_TAG, "System is alive - Free heap: %d bytes", esp_get_free_heap_size());
+        }
 
         // Send heartbeat request to SERVER:PORT/heartbeat
         HttpResponse response = httpClient.get("/heartbeat");
@@ -29,7 +32,7 @@ static void heartbeatDaemonTask(void *pvParameters)
             ESP_LOGE(PRIV_DAEMON_TAG, "Heartbeat failed - Status: %d", response.statusCode);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(30000)); // Every 30 seconds
+        vTaskDelay(pdMS_TO_TICKS(1000 * HEARTBEAT_SERVER_AVAIBILITY)); // Every 30 seconds
     }
 }
 

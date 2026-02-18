@@ -11,6 +11,7 @@
 
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
+static const char *LOCK_TAG = "ONLINE_LOCK";
 
 // Global WiFi instance shared between main and daemon
 WiFiConnect *g_wifi = nullptr;
@@ -26,6 +27,7 @@ static void setup_serial(void)
 {
     esp_log_level_set(TAG, ESP_LOG_INFO);
     esp_log_level_set(NET_TAG, ESP_LOG_INFO);
+    esp_log_level_set(LOCK_TAG, ESP_LOG_INFO);
 }
 
 void init_app(void)
@@ -87,6 +89,11 @@ void init_app(void)
 
     // Starting DHCP ID Client Configuration
     GID::gID();
+    Daemon::startgIDDaemon();
+
+    // Unit Test
+
+    // Init Extensive Platform
 }
 
 extern "C" void app_main(void)

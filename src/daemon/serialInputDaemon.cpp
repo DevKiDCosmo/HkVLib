@@ -7,7 +7,10 @@ static const char *PRIV_DAEMON_TAG = "SERIAL";
 
 void serialInputDaemonTask(void *pvParameters)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Serial input daemon started on Core %d", xPortGetCoreID());
+    if (DEBUG_FLAG_EXTENSIVE)
+    {
+        ESP_LOGI(PRIV_DAEMON_TAG, "Serial input daemon started on Core %d", xPortGetCoreID());
+    }
 
     while (true)
     {

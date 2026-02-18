@@ -21,7 +21,12 @@ public:
     static void startHeartbeatDaemon(void);
 
     /**
-     *
+     * @brief Start Serial Input for Debug.
      */
     static void startSerialInputDaemon(void);
+
+    /**
+     * @brief Start gID Daemon for
+     */
+    static void startgIDDaemon(void);
 };

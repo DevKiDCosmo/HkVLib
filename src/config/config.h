@@ -17,6 +17,8 @@
 // Server configuration
 #define SERVER "192.168.0.171"
 #define PORT 8080
+#define HEARTBEAT_SERVER_AVAIBILITY 30 // in s
+#define HEARTBEAT_DEVICE_AVAIBILITY 10 // in s
 
 // Firmware
 #define BUILD "12203984"
@@ -25,7 +27,9 @@
 #define VERSION "v1.0"
 
 // DEBUG Config
-#define DEBUG_FLAG false
+#define DEBUG_FLAG_EXTENSIVE false
+#define DEBUG_ERROR true
+#define DEBUG_NORMAL true
 
 // TEAM Configuration and Name
 #define TEAMID 0
