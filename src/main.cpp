@@ -7,6 +7,7 @@
 
 #include "daemon/daemon.h"
 #include "network/gid.h"
+#include "app.h"
 
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
@@ -91,25 +92,10 @@ void init_app(void)
 extern "C" void app_main(void)
 {
     init_app();
-
-    // Main loop runs independently on Core 1
+    App::app();
     ESP_LOGI(TAG, "Main loop starting on Core %d", xPortGetCoreID());
     while (true)
     {
-
-        // Main application logic goes here
-        ESP_LOGI(TAG, "Main loop - Free heap: %d bytes", esp_get_free_heap_size());
-        vTaskDelay(pdMS_TO_TICKS(10000)); // 10 second interval
-
-        ESP_LOGI(TAG, "Doing some work in the main loop..., IP: %s", g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "Not connected");
-
-        // Using Makeblock-Libary for actual hardware interaction (e.g., sensors, actuators) would go here
-
-        // As test. Try to disconnect to WiFi.
-        if (g_wifi->isConnected())
-        {
-            ESP_LOGI(TAG, "Disconnecting WiFi to test reconnect logic...");
-            g_wifi->disconnect();
-        }
+        App::update();
     }
 }

@@ -10,3 +10,4 @@ example/Makeblock-Libraries
 example/mlib
 example/src
 .DS_Store
+server/data/devices.csv
