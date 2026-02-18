@@ -1,14 +1,14 @@
 #include "daemon.h"
-#include "esp_log.h"
 #include "../config/config.h"
 #include "../network/request.h"
+#include "../serial/log.h"
 #include <Arduino.h>
 
 static const char *PRIV_DAEMON_TAG = "gIDDaemon";
 
 void gIDDaemonTask(void *pvParameters)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "gID Heartbeat daemon started on Core %d", xPortGetCoreID());
+    Log::sys_info(PRIV_DAEMON_TAG, "gID Heartbeat daemon started on Core " + String(xPortGetCoreID()));
 
     HttpRequest httpClient(SERVER, PORT);
     while (true)
@@ -19,12 +19,11 @@ void gIDDaemonTask(void *pvParameters)
 
         if (response.success)
         {
-            ESP_LOGI(PRIV_DAEMON_TAG, "Heartbeat gID sent successfully - Status: %d, Response: %s",
-                     response.statusCode, response.body.c_str());
+            Log::sys_info(PRIV_DAEMON_TAG, "Heartbeat gID sent successfully - Status: " + String(response.statusCode) + " Response: " + response.body);
         }
         else
         {
-            ESP_LOGE(PRIV_DAEMON_TAG, "Heartbeat gID failed - Status: %d", response.statusCode);
+            Log::sys_error(PRIV_DAEMON_TAG, "Heartbeat gID failed - Status: " + String(response.statusCode));
         }
 
         delay(1000 * HEARTBEAT_DEVICE_AVAIBILITY); // 10 second delay
@@ -33,7 +32,7 @@ void gIDDaemonTask(void *pvParameters)
 
 void Daemon::startgIDDaemon(void)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Starting gID daemon...");
+    Log::sys_info(PRIV_DAEMON_TAG, "Starting gID daemon...");
 
     // Create a simple gID task on Core 1
     xTaskCreatePinnedToCore(
@@ -45,5 +44,5 @@ void Daemon::startgIDDaemon(void)
         NULL,
         1);
 
-    ESP_LOGI(PRIV_DAEMON_TAG, "Heartbeat daemon started");
+    Log::sys_info(PRIV_DAEMON_TAG, "Heartbeat daemon started");
 }

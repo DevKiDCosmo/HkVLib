@@ -1,12 +1,12 @@
 #include "wifi.h"
-#include "esp_log.h"
 #include "../../config/config.h"
+#include "../../serial/log.h"
 
 WiFiConnect::WiFiConnect() : connected(false) {}
 
 bool WiFiConnect::connect(const String &ssid, const String &password, unsigned long timeout_ms)
 {
-    ESP_LOGI("WIFI", "Connecting to WiFi: %s", ssid.c_str());
+    Log::sys_info("WIFI", "Connecting to WiFi: " + ssid);
 
     WiFi.begin(ssid.c_str(), password.c_str());
 
@@ -14,22 +14,19 @@ bool WiFiConnect::connect(const String &ssid, const String &password, unsigned l
     while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < timeout_ms)
     {
         delay(500);
-        if (DEBUG_FLAG_EXTENSIVE)
-        {
-            ESP_LOGI("WIFI", ".");
-        }
+        Log::sys_infoflag("WIFI", ".", DEBUG_FLAG_EXTENSIVE);
     }
 
     if (WiFi.status() == WL_CONNECTED)
     {
         connected = true;
-        ESP_LOGI("WIFI", "Connected! IP: %s", WiFi.localIP().toString().c_str());
+        Log::sys_info("WIFI", "Connected! IP: " + WiFi.localIP().toString());
         return true;
     }
     else
     {
         connected = false;
-        ESP_LOGI("WIFI", "Connection failed!");
+        Log::sys_info("WIFI", "Connection failed!");
         return false;
     }
 }
@@ -43,18 +40,18 @@ void WiFiConnect::disconnect()
 {
     if (!isConnected())
     {
-        ESP_LOGI("WIFI", "Already disconnected");
+        Log::sys_info("WIFI", "Already disconnected");
         return;
     }
 
     if (ONLINE_MANDATORY)
     {
-        ESP_LOGW("WIFI", "Online mandatory is enabled, skipping disconnect!");
+        Log::sys_warning("WIFI", "Online mandatory is enabled, skipping disconnect!");
         return;
     }
     WiFi.disconnect();
     connected = false;
-    ESP_LOGI("WIFI", "Disconnected");
+    Log::sys_info("WIFI", "Disconnected");
 }
 
 String WiFiConnect::getLocalIP()

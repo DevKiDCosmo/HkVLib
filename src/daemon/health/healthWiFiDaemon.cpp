@@ -6,14 +6,14 @@ static const char *PRIV_DAEMON_TAG = "HealthWiFi";
 
 void healthWiFiDaemonTask(void *pvParameters)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Health WiFi daemon started on Core %d", xPortGetCoreID());
+    Log::sys_info(PRIV_DAEMON_TAG, "Health WiFi daemon started on Core " + String(xPortGetCoreID()));
 
     while (true)
     {
         // Check if WiFi is connected
         if (!g_wifi->isConnected())
         {
-            ESP_LOGW(PRIV_DAEMON_TAG, "WiFi not connected");
+            Log::sys_warning(PRIV_DAEMON_TAG, "WiFi not connected");
             health_setStatus(HEALTH_WIFI_CONNECTED, HEALTH_STATUS_ERROR);
             health_setStatus(HEALTH_WIFI_RSSI, HEALTH_STATUS_ERROR);
             health_setStatus(HEALTH_WIFI_TXPOWER, HEALTH_STATUS_ERROR);
@@ -39,22 +39,19 @@ void healthWiFiDaemonTask(void *pvParameters)
         String localIP = g_wifi->getLocalIP();
         IPAddress gateway = g_wifi->getGatewayIP();
 
-        ESP_LOGI(PRIV_DAEMON_TAG, "WiFi Status - SSID: %s, IP: %s, Gateway: %s",
-                 ssid.c_str(), localIP.c_str(), gateway.toString().c_str());
-        ESP_LOGI(PRIV_DAEMON_TAG, "WiFi Metrics - RSSI: %d dBm, Quality: %d%%, Channel: %u",
-                 rssi, quality, channel);
-        ESP_LOGI(PRIV_DAEMON_TAG, "WiFi Metrics - TX Power: %u dBm, BSSID: %s",
-                 txPower, bssid.c_str());
+        Log::sys_info(PRIV_DAEMON_TAG, "WiFi Status - SSID: " + ssid + ", IP: " + localIP + ", Gateway: " + gateway.toString());
+        Log::sys_info(PRIV_DAEMON_TAG, "WiFi Metrics - RSSI: " + String(rssi) + " dBm, Quality: " + String(quality) + "%, Channel: " + String(channel));
+        Log::sys_info(PRIV_DAEMON_TAG, "WiFi Metrics - TX Power: " + String(txPower) + " dBm, BSSID: " + bssid);
 
         // Check RSSI (signal strength)
         if (rssi < -80)
         {
-            ESP_LOGE(PRIV_DAEMON_TAG, "WiFi RSSI critical: %d dBm", rssi);
+            Log::sys_error(PRIV_DAEMON_TAG, "WiFi RSSI critical: " + String(rssi) + " dBm");
             health_setStatus(HEALTH_WIFI_RSSI, HEALTH_STATUS_ERROR);
         }
         else if (rssi < -70)
         {
-            ESP_LOGW(PRIV_DAEMON_TAG, "WiFi RSSI warning: %d dBm", rssi);
+            Log::sys_warning(PRIV_DAEMON_TAG, "WiFi RSSI warning: " + String(rssi) + " dBm");
             health_setStatus(HEALTH_WIFI_RSSI, HEALTH_STATUS_WARNING);
         }
         else
@@ -65,12 +62,12 @@ void healthWiFiDaemonTask(void *pvParameters)
         // Check TX Power
         if (txPower < 10)
         {
-            ESP_LOGE(PRIV_DAEMON_TAG, "WiFi TX Power critical: %u dBm", txPower);
+            Log::sys_error(PRIV_DAEMON_TAG, "WiFi TX Power critical: " + String(txPower) + " dBm");
             health_setStatus(HEALTH_WIFI_TXPOWER, HEALTH_STATUS_ERROR);
         }
         else if (txPower < 15)
         {
-            ESP_LOGW(PRIV_DAEMON_TAG, "WiFi TX Power warning: %u dBm", txPower);
+            Log::sys_warning(PRIV_DAEMON_TAG, "WiFi TX Power warning: " + String(txPower) + " dBm");
             health_setStatus(HEALTH_WIFI_TXPOWER, HEALTH_STATUS_WARNING);
         }
         else
@@ -81,12 +78,12 @@ void healthWiFiDaemonTask(void *pvParameters)
         // Check Signal Quality
         if (quality < 30)
         {
-            ESP_LOGE(PRIV_DAEMON_TAG, "WiFi Quality critical: %d%%", quality);
+            Log::sys_error(PRIV_DAEMON_TAG, "WiFi Quality critical: " + String(quality) + "%");
             health_setStatus(HEALTH_WIFI_QUALITY, HEALTH_STATUS_ERROR);
         }
         else if (quality < 50)
         {
-            ESP_LOGW(PRIV_DAEMON_TAG, "WiFi Quality warning: %d%%", quality);
+            Log::sys_warning(PRIV_DAEMON_TAG, "WiFi Quality warning: " + String(quality) + "%");
             health_setStatus(HEALTH_WIFI_QUALITY, HEALTH_STATUS_WARNING);
         }
         else
@@ -97,7 +94,7 @@ void healthWiFiDaemonTask(void *pvParameters)
         // Check Channel (some channels have interference issues)
         if (channel == 0)
         {
-            ESP_LOGE(PRIV_DAEMON_TAG, "WiFi Channel error: %u", channel);
+            Log::sys_error(PRIV_DAEMON_TAG, "WiFi Channel error: " + String(channel));
             health_setStatus(HEALTH_WIFI_CHANNEL, HEALTH_STATUS_ERROR);
         }
         else if (channel > 14) // 2.4GHz channels are 1-14
@@ -115,12 +112,12 @@ void healthWiFiDaemonTask(void *pvParameters)
         {
             if (pingMs > 500)
             {
-                ESP_LOGE(PRIV_DAEMON_TAG, "WiFi Ping critical: %u ms", pingMs);
+                Log::sys_error(PRIV_DAEMON_TAG, "WiFi Ping critical: " + String(pingMs) + " ms");
                 health_setStatus(HEALTH_WIFI_PING, HEALTH_STATUS_ERROR);
             }
             else if (pingMs > 200)
             {
-                ESP_LOGW(PRIV_DAEMON_TAG, "WiFi Ping warning: %u ms", pingMs);
+                Log::sys_warning(PRIV_DAEMON_TAG, "WiFi Ping warning: " + String(pingMs) + " ms");
                 health_setStatus(HEALTH_WIFI_PING, HEALTH_STATUS_WARNING);
             }
             else
@@ -139,7 +136,7 @@ void healthWiFiDaemonTask(void *pvParameters)
 
 void HealthDaemons::startHealthWiFiDaemon(void)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Starting health WiFi daemon...");
+    Log::sys_info(PRIV_DAEMON_TAG, "Starting health WiFi daemon...");
 
     xTaskCreatePinnedToCore(
         healthWiFiDaemonTask,
@@ -150,5 +147,5 @@ void HealthDaemons::startHealthWiFiDaemon(void)
         NULL,
         1);
 
-    ESP_LOGI(PRIV_DAEMON_TAG, "Health WiFi daemon started");
+    Log::sys_info(PRIV_DAEMON_TAG, "Health WiFi daemon started");
 }

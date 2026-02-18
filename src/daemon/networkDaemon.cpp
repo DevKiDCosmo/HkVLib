@@ -1,7 +1,7 @@
 #include "daemon.h"
 #include "../config/config.h"
 #include "../connectivity/wifi/wifi.h"
-#include "esp_log.h"
+#include "../serial/log.h"
 #include <Arduino.h>
 
 static const char *PRIV_DAEMON_TAG = "NET_DAEMON";
@@ -11,7 +11,7 @@ static void networkDaemonTask(void *pvParameters)
 {
     if (DEBUG_FLAG_EXTENSIVE)
     {
-        ESP_LOGI(PRIV_DAEMON_TAG, "Network daemon started on Core %d", xPortGetCoreID());
+        Log::sys_info(PRIV_DAEMON_TAG, "Network daemon started on Core " + String(xPortGetCoreID()));
     }
 
     // Wait a moment for initialization to complete
@@ -24,17 +24,15 @@ static void networkDaemonTask(void *pvParameters)
             // Check WiFi status periodically
             if (!g_wifi->isConnected())
             {
-                ESP_LOGW(PRIV_DAEMON_TAG, "WiFi disconnected! Attempting reconnect...");
+                Log::sys_warning(PRIV_DAEMON_TAG, "WiFi disconnected! Attempting reconnect...");
                 if (g_wifi->connect(g_ssid, g_password))
                 {
-                    ESP_LOGI(PRIV_DAEMON_TAG, "WiFi reconnected. IP: %s", g_wifi->getLocalIP().c_str());
+                    Log::sys_info(PRIV_DAEMON_TAG, "WiFi reconnected. IP: " + g_wifi->getLocalIP());
                 }
                 else
                 {
-                    ESP_LOGE(PRIV_DAEMON_TAG, "WiFi reconnect failed!");
+                    Log::sys_error(PRIV_DAEMON_TAG, "WiFi reconnect failed!");
                 }
-
-                // TODO: ONLINE_LOCK logic
             }
             else
             {
@@ -42,7 +40,7 @@ static void networkDaemonTask(void *pvParameters)
                 static int counter = 0;
                 if (++counter % 12 == 0)
                 { // Every 60 seconds
-                    ESP_LOGI(PRIV_DAEMON_TAG, "WiFi OK - IP: %s", g_wifi->getLocalIP().c_str());
+                    Log::sys_info(PRIV_DAEMON_TAG, "WiFi OK - IP: " + g_wifi->getLocalIP());
                     counter = 0;
                 }
             }
@@ -55,7 +53,7 @@ static void networkDaemonTask(void *pvParameters)
 
 void Daemon::startNetworkDaemon(void)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Starting network daemon...");
+    Log::sys_info(PRIV_DAEMON_TAG, "Starting network daemon...");
 
     // Create network daemon task on Core 0
     // Stack size: 4096 bytes, Priority: 1 (low), Core: 0
@@ -69,5 +67,5 @@ void Daemon::startNetworkDaemon(void)
         0                  // Core 0
     );
 
-    ESP_LOGI(PRIV_DAEMON_TAG, "Network daemon started");
+    Log::sys_info(PRIV_DAEMON_TAG, "Network daemon started");
 }

@@ -1,14 +1,14 @@
 #include "daemon.h"
-#include "esp_log.h"
 #include "../config/config.h"
 #include "../network/request.h"
+#include "../serial/log.h"
 #include <Arduino.h>
 
 static const char *PRIV_DAEMON_TAG = "HEARTBEAT";
 
 static void heartbeatDaemonTask(void *pvParameters)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Heartbeat daemon started on Core %d", xPortGetCoreID());
+    Log::sys_info(PRIV_DAEMON_TAG, "Heartbeat daemon started on Core " + String(xPortGetCoreID()));
 
     // Initialize HTTP client with server configuration
     HttpRequest httpClient(SERVER, PORT);
@@ -17,19 +17,18 @@ static void heartbeatDaemonTask(void *pvParameters)
     {
         if (DEBUG_FLAG_EXTENSIVE)
         {
-            ESP_LOGI(PRIV_DAEMON_TAG, "System is alive - Free heap: %d bytes", esp_get_free_heap_size());
+            Log::sys_info(PRIV_DAEMON_TAG, "System is alive - Free heap: " + String(esp_get_free_heap_size()) + " bytes");
         }
 
         // Send heartbeat request to SERVER:PORT/heartbeat
         HttpResponse response = httpClient.get("/heartbeat");
         if (response.success)
         {
-            ESP_LOGI(PRIV_DAEMON_TAG, "Heartbeat sent successfully - Status: %d, Response: %s",
-                     response.statusCode, response.body.c_str());
+            Log::sys_info(PRIV_DAEMON_TAG, "Heartbeat sent successfully - Status: " + String(response.statusCode) + " Response: " + response.body);
         }
         else
         {
-            ESP_LOGE(PRIV_DAEMON_TAG, "Heartbeat failed - Status: %d", response.statusCode);
+            Log::sys_error(PRIV_DAEMON_TAG, "Heartbeat failed - Status: " + String(response.statusCode));
         }
 
         delay(1000 * HEARTBEAT_SERVER_AVAIBILITY); // Every 30 seconds
@@ -38,7 +37,7 @@ static void heartbeatDaemonTask(void *pvParameters)
 
 void Daemon::startHeartbeatDaemon(void)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Starting heartbeat daemon...");
+    Log::sys_info(PRIV_DAEMON_TAG, "Starting heartbeat daemon...");
 
     // Create a simple heartbeat task on Core 1
     xTaskCreatePinnedToCore(
@@ -50,5 +49,5 @@ void Daemon::startHeartbeatDaemon(void)
         NULL,
         1);
 
-    ESP_LOGI(PRIV_DAEMON_TAG, "Heartbeat daemon started");
+    Log::sys_info(PRIV_DAEMON_TAG, "Heartbeat daemon started");
 }

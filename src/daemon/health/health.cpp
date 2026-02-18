@@ -1,5 +1,5 @@
 #include "health.h"
-#include "esp_log.h"
+#include "../../serial/log.h"
 
 static const char *HEALTH_TAG = "HEALTH";
 
@@ -23,10 +23,7 @@ void health_setStatus(uint8_t healthType, uint8_t status)
 
         if (oldStatus != status)
         {
-            ESP_LOGI(HEALTH_TAG, "Health [%d] changed: %s -> %s",
-                     healthType,
-                     health_getStatusString(oldStatus),
-                     health_getStatusString(status));
+            Log::sys_info(HEALTH_TAG, "Health [" + String(healthType) + "] changed: " + health_getStatusString(oldStatus) + " -> " + health_getStatusString(status));
         }
     }
 }

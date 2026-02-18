@@ -1,5 +1,5 @@
 #include "onlinelock.h"
-#include "esp_log.h"
+#include "../serial/log.h"
 
 static const char *LOCK_TAG = "ONLINE_LOCK";
 
@@ -14,7 +14,7 @@ void OnlineLock::init()
     locked = false;
     status_changed = false;
     state_saved = false;
-    ESP_LOGI(LOCK_TAG, "OnlineLock initialized");
+    Log::sys_info(LOCK_TAG, "OnlineLock initialized");
 }
 
 bool OnlineLock::isLocked()
@@ -28,7 +28,7 @@ void OnlineLock::engageLock()
     {
         locked = true;
         status_changed = true;
-        ESP_LOGW(LOCK_TAG, "ONLINE LOCK ENGAGED - Operations interrupted!");
+        Log::sys_warning(LOCK_TAG, "ONLINE LOCK ENGAGED - Operations interrupted!");
     }
 }
 
@@ -38,7 +38,7 @@ void OnlineLock::disengageLock()
     {
         locked = false;
         status_changed = true;
-        ESP_LOGI(LOCK_TAG, "ONLINE LOCK DISENGAGED - Resuming operations...");
+        Log::sys_info(LOCK_TAG, "ONLINE LOCK DISENGAGED - Resuming operations...");
     }
 }
 
@@ -50,8 +50,7 @@ void OnlineLock::saveProcessState(uint32_t op_id, bool is_critical)
     saved_state.priority = is_critical ? 2 : 1;
     state_saved = true;
 
-    ESP_LOGI(LOCK_TAG, "Process state saved - Op ID: %u, Critical: %s", 
-             op_id, is_critical ? "YES" : "NO");
+    Log::sys_info(LOCK_TAG, "Process state saved - Op ID: " + String(op_id) + ", Critical: " + (is_critical ? "YES" : "NO"));
 }
 
 bool OnlineLock::hasSavedState()
@@ -68,7 +67,7 @@ void OnlineLock::clearSavedState()
 {
     state_saved = false;
     saved_state = {0, 0, 0, false};
-    ESP_LOGI(LOCK_TAG, "Saved state cleared");
+    Log::sys_info(LOCK_TAG, "Saved state cleared");
 }
 
 bool OnlineLock::statusChanged()

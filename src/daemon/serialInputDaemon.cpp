@@ -2,6 +2,7 @@
 #include "../config/config.h"
 #include "esp_log.h"
 #include "../connectivity/wifi/wifi.h"
+#include "../serial/log.h"
 
 static const char *PRIV_DAEMON_TAG = "SERIAL";
 
@@ -9,7 +10,7 @@ void serialInputDaemonTask(void *pvParameters)
 {
     if (DEBUG_FLAG_EXTENSIVE)
     {
-        ESP_LOGI(PRIV_DAEMON_TAG, "Serial input daemon started on Core %d", xPortGetCoreID());
+        Log::sys_info(PRIV_DAEMON_TAG, "Serial input daemon started on Core " + String(xPortGetCoreID()));
     }
 
     while (true)
@@ -18,25 +19,23 @@ void serialInputDaemonTask(void *pvParameters)
         {
             String input = Serial.readStringUntil('\n');
             input.trim();
-            ESP_LOGI(PRIV_DAEMON_TAG, "Received command: %s", input.c_str());
+            Log::sys_info(PRIV_DAEMON_TAG, "Received command: " + input);
 
             // Process commands here
             if (input.equalsIgnoreCase("wifi status"))
             {
                 if (g_wifi != nullptr)
                 {
-                    ESP_LOGI(PRIV_DAEMON_TAG, "WiFi Status: %s, IP: %s",
-                             g_wifi->isConnected() ? "Connected" : "Disconnected",
-                             g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "N/A");
+                    Log::sys_info(PRIV_DAEMON_TAG, "WiFi Status: " + String(g_wifi->isConnected() ? "Connected" : "Disconnected") + ", IP: " + (g_wifi->isConnected() ? g_wifi->getLocalIP() : "N/A"));
                 }
                 else
                 {
-                    ESP_LOGW(PRIV_DAEMON_TAG, "WiFi not initialized");
+                    Log::sys_warning(PRIV_DAEMON_TAG, "WiFi not initialized");
                 }
             }
             else if (input.equalsIgnoreCase("reboot"))
             {
-                ESP_LOGI(PRIV_DAEMON_TAG, "Rebooting system...");
+                Log::sys_info(PRIV_DAEMON_TAG, "Rebooting system...");
                 esp_restart();
             }
         }
@@ -47,7 +46,7 @@ void serialInputDaemonTask(void *pvParameters)
 
 void Daemon::startSerialInputDaemon(void)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Starting serial input daemon...");
+    Log::sys_info(PRIV_DAEMON_TAG, "Starting serial input daemon...");
 
     // Create a simple serial input task on Core 1
     xTaskCreatePinnedToCore(
@@ -59,5 +58,5 @@ void Daemon::startSerialInputDaemon(void)
         NULL,
         1);
 
-    ESP_LOGI(PRIV_DAEMON_TAG, "Serial input daemon started");
+    Log::sys_info(PRIV_DAEMON_TAG, "Serial input daemon started");
 }

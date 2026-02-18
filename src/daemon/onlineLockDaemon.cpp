@@ -2,13 +2,14 @@
 #include "../onlinelock/onlinelock.h"
 #include "../include.h"
 #include "daemon.h"
+#include "../serial/log.h"
 
 static const char *PRIV_DAEMON_TAG = "ONLINE_LOCK";
 
 // Online lock daemon - monitors connection and controls OnlineLock state
 static void onlineLockDaemonTask(void *pvParameters)
 {
-    ESP_LOGI(PRIV_DAEMON_TAG, "Online lock daemon started on Core %d", xPortGetCoreID());
+    Log::sys_info(PRIV_DAEMON_TAG, "Online lock daemon started on Core " + String(xPortGetCoreID()));
     delay(2000); // Wait for initialization
 
     while (true)
@@ -33,9 +34,7 @@ static void onlineLockDaemonTask(void *pvParameters)
 // Start online lock daemon
 void Daemon::startOnlineLockDaemon(void)
 {
-    esp_log_level_set(PRIV_DAEMON_TAG, ESP_LOG_INFO);
-
-    ESP_LOGI(PRIV_DAEMON_TAG, "Starting online lock daemon...");
+    Log::sys_info(PRIV_DAEMON_TAG, "Starting online lock daemon...");
     xTaskCreatePinnedToCore(
         onlineLockDaemonTask,
         "OnlineLockDaemon",
@@ -45,5 +44,5 @@ void Daemon::startOnlineLockDaemon(void)
         NULL,
         1 // Core 1
     );
-    ESP_LOGI(PRIV_DAEMON_TAG, "Online lock daemon started");
+    Log::sys_info(PRIV_DAEMON_TAG, "Online lock daemon started");
 }
