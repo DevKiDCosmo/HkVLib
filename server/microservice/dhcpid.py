@@ -130,14 +130,16 @@ def save_csv() -> None:
         if not _dirty:
             return
         _ensure_data_dir()
-        tmp_path = CSV_PATH + ".tmp"
-        with open(tmp_path, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=_CSV_FIELDS)
-            writer.writeheader()
-            for mac, info in _devices.items():
-                writer.writerow({"mac": mac, **info})
-        os.replace(tmp_path, CSV_PATH)
-        _dirty = False
+        try:
+            with open(CSV_PATH, "w", newline="") as f:
+                print(f"[dhcpid] Writing CSV to: {CSV_PATH}")
+                writer = csv.DictWriter(f, fieldnames=_CSV_FIELDS)
+                writer.writeheader()
+                for mac, info in _devices.items():
+                    writer.writerow({"mac": mac, **info})
+            _dirty = False
+        except Exception as exc:
+            print(f"[dhcpid] Error writing CSV: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -246,3 +248,19 @@ def force_save():
         return jsonify({"status": "saved", "path": CSV_PATH}), 200
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+# TODO: Asynchron task that deletes old bots.
+
+@dhcpid_bp.get("/heartbeat/<mac>/<int:device_id>")
+def heartbeat_device(mac: str, device_id: int):
+    """Handle heartbeat for a device."""
+    # Update last seen value.
+    with _lock:
+        entry = _devices.get(mac)
+        if entry is not None and entry["device_id"] == device_id:
+            entry["last_seen"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            _dirty = True
+            return jsonify({"status": "heartbeat_received", "mac": mac}), 200
+        else:
+            return jsonify({"error": "device not found or mismatched device_id"}), 404
