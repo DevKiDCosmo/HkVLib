@@ -35,6 +35,9 @@ void networkDaemonTask(void *pvParameters) {
                 } else {
                     ESP_LOGE(NET_TAG, "WiFi reconnect failed!");
                 }
+
+                // TODO: ONLINE_LOCK logic
+
             } else {
                 // WiFi is connected - just log status occasionally
                 static int counter = 0;
@@ -46,7 +49,7 @@ void networkDaemonTask(void *pvParameters) {
         }
         
         // Check every 5 seconds
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(WLAN_PRIORITY * 1000));  // Convert seconds to milliseconds
     }
 }
 
@@ -107,6 +110,47 @@ void startHeartbeatDaemon(void) {
     ESP_LOGI(TAG, "Heartbeat daemon started");
 }
 
+void serialInputDaemonTask(void *pvParameters) {
+    ESP_LOGI("SERIAL", "Serial input daemon started on Core %d", xPortGetCoreID());
+    
+    while (true) {
+        if (Serial.available() > 0) {
+            String input = Serial.readStringUntil('\n');
+            input.trim();
+            ESP_LOGI("SERIAL", "Received command: %s", input.c_str());
+            
+            // Process commands here (e.g., control hardware, change settings)
+            // For example, a simple command to check WiFi status:
+            if (input.equalsIgnoreCase("wifi status")) {
+                if (g_wifi != nullptr) {
+                    ESP_LOGI("SERIAL", "WiFi Status: %s, IP: %s", 
+                             g_wifi->isConnected() ? "Connected" : "Disconnected",
+                             g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "N/A");
+                } else {
+                    ESP_LOGW("SERIAL", "WiFi not initialized");
+                }
+            }
+        }
+        
+        vTaskDelay(pdMS_TO_TICKS(100));  // Check for input every 100ms
+    }
+}
+
+void startSerialInputDaemon(void) {
+    ESP_LOGI(TAG, "Starting serial input daemon...");
+    
+    // Create a simple serial input task on Core 1
+    xTaskCreatePinnedToCore(
+        serialInputDaemonTask,
+        "SerialInputDaemon",
+        4096,
+        NULL,
+        1,
+        NULL,
+        1
+    );
+}
+
 void init_app(void) {
     // ESP-IDF native logging (no Arduino dependency)
     setup_serial();
@@ -119,6 +163,10 @@ void init_app(void) {
     initArduino();
     ESP_LOGI(TAG, "Arduino framework initialized");
 
+    // Initialize Serial for reading commands
+    Serial.begin(115200);
+    ESP_LOGI(TAG, "Serial initialized at 115200 baud");
+
     // Initialize WiFi using Arduino library
     ESP_LOGI(TAG, "Initializing WiFi...");
     g_wifi = new WiFiConnect();
@@ -129,14 +177,28 @@ void init_app(void) {
         ESP_LOGI(TAG, "WiFi connected successfully");
         ESP_LOGI(TAG, "IP Address: %s", g_wifi->getLocalIP().c_str());
     } else {
-        ESP_LOGE(TAG, "WiFi connection failed! Daemon will retry...");
+        ESP_LOGE(TAG, "WiFi connection failed! Attempting backup credentials...");
+        g_ssid = BACKUP_WLAN_SSID;
+        g_password = BACKUP_WLAN_PASSWORD;
+        if (g_wifi->connect(g_ssid, g_password)) {
+            ESP_LOGI(TAG, "Backup WiFi connected successfully");
+            ESP_LOGI(TAG, "IP Address: %s", g_wifi->getLocalIP().c_str());
+        } else {
+            ESP_LOGE(TAG, "WiFi connection failed! Daemon will retry... with old credentials");
+            g_ssid = WLAN_SSID;
+            g_password = WLAN_PASSWORD;
+        }
     }
 
     ESP_LOGI(TAG, "Setup complete. Starting background services...");
     
     // Start network daemon after WiFi init
+    ESP_LOGI(TAG, "Starting daemons...");
     startNetworkDaemon();
     startHeartbeatDaemon();
+
+    // Start serial input daemon for immediate command processing.
+    startSerialInputDaemon();
 
     // Starting DHCP Client Configuration
     // Starting DHCP ID Client Configuration

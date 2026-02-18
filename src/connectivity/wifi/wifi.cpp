@@ -12,7 +12,9 @@ bool WiFiConnect::connect(const char* ssid, const char* password, unsigned long 
     unsigned long startAttempt = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < timeout_ms) {
         delay(500);
-        ESP_LOGI("WIFI", ".");
+        if (DEBUG_FLAG) {
+            ESP_LOGI("WIFI", ".");
+        }
     }
     
     if (WiFi.status() == WL_CONNECTED) {
