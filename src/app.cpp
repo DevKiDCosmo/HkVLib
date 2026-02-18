@@ -4,7 +4,7 @@
 
 #define LED_PIN 2
 
-void App::app()
+void App::init()
 {
     serialprint("App initialized");
     pinMode(LED_PIN, OUTPUT);

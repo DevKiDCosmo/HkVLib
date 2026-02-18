@@ -22,7 +22,7 @@ void healthWiFiDaemonTask(void *pvParameters)
             health_setStatus(HEALTH_WIFI_QUALITY, HEALTH_STATUS_ERROR);
             health_setStatus(HEALTH_WIFI_LINKSPEED, HEALTH_STATUS_ERROR);
 
-            vTaskDelay(pdMS_TO_TICKS(1000 * HEALTH_WIFI_DAEMON));
+            delay(1000 * HEALTH_WIFI_DAEMON); // Delay for the specified interval
             continue;
         }
 
@@ -133,7 +133,7 @@ void healthWiFiDaemonTask(void *pvParameters)
             health_setStatus(HEALTH_WIFI_PING, HEALTH_STATUS_UNKNOWN);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000 * HEALTH_WIFI_DAEMON));
+        delay(1000 * HEALTH_WIFI_DAEMON); // Delay for the specified interval
     }
 }
 

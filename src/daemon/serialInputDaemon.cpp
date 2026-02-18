@@ -41,7 +41,7 @@ void serialInputDaemonTask(void *pvParameters)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100)); // Check for input every 100ms
+        delay(100); // Check for input every 100ms
     }
 }
 

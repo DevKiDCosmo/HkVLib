@@ -15,7 +15,7 @@ static void networkDaemonTask(void *pvParameters)
     }
 
     // Wait a moment for initialization to complete
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    delay(1000);
 
     while (true)
     {
@@ -49,7 +49,7 @@ static void networkDaemonTask(void *pvParameters)
         }
 
         // Check every 5 seconds
-        vTaskDelay(pdMS_TO_TICKS(WLAN_PRIORITY * 1000)); // Convert seconds to milliseconds
+        delay(WLAN_PRIORITY * 1000); // Convert seconds to milliseconds
     }
 }
 

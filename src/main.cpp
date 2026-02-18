@@ -10,6 +10,7 @@
 #include "app.h"
 #include "onlinelock/onlinelock.h"
 #include "daemon/health/health.h"
+#include "serial/log.h"
 
 #define APP_OPERATION_ID 0x01 // Operation ID for main app loop
 
@@ -36,52 +37,52 @@ void init_app(void)
 {
     // ESP-IDF native logging (no Arduino dependency)
     setup_serial();
-    ESP_LOGI(TAG, "=================================");
-    ESP_LOGI(TAG, "HkVLib Firmware Starting");
-    ESP_LOGI(TAG, "Free heap: %d bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "=================================");
+    Log::sys_info(TAG, "=================================");
+    Log::sys_info(TAG, "HkVLib Firmware Starting");
+    Log::sys_info(TAG, "Free heap: " + String(esp_get_free_heap_size()) + " bytes");
+    Log::sys_info(TAG, "=================================");
 
     // Initialize Arduino framework
     initArduino();
-    ESP_LOGI(TAG, "Arduino framework initialized");
+    Log::sys_info(TAG, "Arduino framework initialized");
 
     // Initialize Serial for reading commands
     Serial.begin(115200);
-    ESP_LOGI(TAG, "Serial initialized at 115200 baud");
+    Log::sys_info(TAG, "Serial initialized at 115200 baud");
 
     // Initialize WiFi using Arduino library
-    ESP_LOGI(TAG, "Initializing WiFi...");
+    Log::sys_info(TAG, "Initializing WiFi...");
     g_wifi = new WiFiConnect();
     g_ssid = WLAN_SSID;
     g_password = WLAN_PASSWORD;
 
     if (g_wifi->connect(g_ssid, g_password))
     {
-        ESP_LOGI(TAG, "WiFi connected successfully");
-        ESP_LOGI(TAG, "IP Address: %s", g_wifi->getLocalIP().c_str());
+        Log::sys_info(TAG, "WiFi connected successfully");
+        Log::sys_info(TAG, "IP Address: " + String(g_wifi->getLocalIP().c_str()));
     }
     else
     {
-        ESP_LOGE(TAG, "WiFi connection failed! Attempting backup credentials...");
+        Log::sys_error(TAG, "WiFi connection failed! Attempting backup credentials...");
         g_ssid = BACKUP_WLAN_SSID;
         g_password = BACKUP_WLAN_PASSWORD;
         if (g_wifi->connect(g_ssid, g_password))
         {
-            ESP_LOGI(TAG, "Backup WiFi connected successfully");
-            ESP_LOGI(TAG, "IP Address: %s", g_wifi->getLocalIP().c_str());
+            Log::sys_info(TAG, "Backup WiFi connected successfully");
+            Log::sys_info(TAG, "IP Address: " + String(g_wifi->getLocalIP().c_str()));
         }
         else
         {
-            ESP_LOGE(TAG, "WiFi connection failed! Daemon will retry... with old credentials");
+            Log::sys_error(TAG, "WiFi connection failed! Daemon will retry... with old credentials");
             g_ssid = WLAN_SSID;
             g_password = WLAN_PASSWORD;
         }
     }
 
-    ESP_LOGI(TAG, "Setup complete. Starting background services...");
+    Log::sys_info(TAG, "Setup complete. Starting background services...");
 
     // Start network daemon after WiFi init
-    ESP_LOGI(TAG, "Starting daemons...");
+    Log::sys_info(TAG, "Starting daemons...");
 
     Daemon::startNetworkDaemon();
     Daemon::startHeartbeatDaemon();
@@ -108,10 +109,10 @@ void init_app(void)
 extern "C" void app_main(void)
 {
     init_app();
-    App::app();
+    App::init();
     OnlineLock::init();
 
-    ESP_LOGI(TAG, "Main loop starting on Core %d", xPortGetCoreID());
+    Log::sys_info(TAG, "Main loop starting on Core " + String(xPortGetCoreID()));
     while (true)
     {
         // Check if lock status changed and save state if interrupted
@@ -121,7 +122,7 @@ extern "C" void app_main(void)
             {
                 // Lock just engaged - save current state
                 OnlineLock::saveProcessState(APP_OPERATION_ID, false);
-                ESP_LOGI(TAG, "App interrupted by online lock - state saved");
+                Log::sys_info(TAG, "App interrupted by online lock - state saved");
                 return; // Exit immediately
             }
             else
@@ -130,7 +131,7 @@ extern "C" void app_main(void)
                 if (OnlineLock::hasSavedState())
                 {
                     ProcessState state = OnlineLock::getSavedState();
-                    ESP_LOGI(TAG, "App resuming from saved state (Op ID: %u)", state.operation_id);
+                    Log::sys_info(TAG, "App resuming from saved state (Op ID: " + String(state.operation_id) + ")");
                     OnlineLock::clearSavedState();
                 }
             }
@@ -139,8 +140,8 @@ extern "C" void app_main(void)
         // If lock is active, skip processing
         if (OnlineLock::isLocked())
         {
-            ESP_LOGW(TAG, "Waiting for online lock to be released...");
-            vTaskDelay(pdMS_TO_TICKS(1000)); // Brief pause to avoid busy loop
+            Log::sys_warning(TAG, "Waiting for online lock to be released...");
+            delay(1000); // Brief pause to avoid busy loop
             return;
         }
 

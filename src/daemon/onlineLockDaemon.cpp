@@ -9,7 +9,7 @@ static const char *PRIV_DAEMON_TAG = "ONLINE_LOCK";
 static void onlineLockDaemonTask(void *pvParameters)
 {
     ESP_LOGI(PRIV_DAEMON_TAG, "Online lock daemon started on Core %d", xPortGetCoreID());
-    vTaskDelay(pdMS_TO_TICKS(2000)); // Wait for initialization
+    delay(2000); // Wait for initialization
 
     while (true)
     {
@@ -26,7 +26,7 @@ static void onlineLockDaemonTask(void *pvParameters)
             OnlineLock::disengageLock();
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5000)); // Check every 5 seconds
+        delay(5000); // Check every 5 seconds
     }
 }
 

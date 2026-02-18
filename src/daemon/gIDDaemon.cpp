@@ -27,7 +27,7 @@ void gIDDaemonTask(void *pvParameters)
             ESP_LOGE(PRIV_DAEMON_TAG, "Heartbeat gID failed - Status: %d", response.statusCode);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000 * HEARTBEAT_DEVICE_AVAIBILITY)); // 10 second delay
+        delay(1000 * HEARTBEAT_DEVICE_AVAIBILITY); // 10 second delay
     }
 }
 

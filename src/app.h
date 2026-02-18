@@ -3,6 +3,6 @@
 class App
 {
 public:
-    static void app();
+    static void init();
     static void update();
 };
