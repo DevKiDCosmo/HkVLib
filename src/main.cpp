@@ -8,10 +8,12 @@
 #include "daemon/daemon.h"
 #include "network/gid.h"
 #include "app.h"
+#include "onlinelock/onlinelock.h"
+
+#define APP_OPERATION_ID 0x01 // Operation ID for main app loop
 
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
-static const char *LOCK_TAG = "ONLINE_LOCK";
 
 // Global WiFi instance shared between main and daemon
 WiFiConnect *g_wifi = nullptr;
@@ -27,7 +29,6 @@ static void setup_serial(void)
 {
     esp_log_level_set(TAG, ESP_LOG_INFO);
     esp_log_level_set(NET_TAG, ESP_LOG_INFO);
-    esp_log_level_set(LOCK_TAG, ESP_LOG_INFO);
 }
 
 void init_app(void)
@@ -84,6 +85,10 @@ void init_app(void)
     Daemon::startNetworkDaemon();
     Daemon::startHeartbeatDaemon();
 
+    // Only load if feature is enabled.
+    if (ONLINE_LOCK)
+        Daemon::startOnlineLockDaemon();
+
     // Start serial input daemon for immediate command processing.
     Daemon::startSerialInputDaemon();
 
@@ -100,9 +105,41 @@ extern "C" void app_main(void)
 {
     init_app();
     App::app();
+    OnlineLock::init();
+
     ESP_LOGI(TAG, "Main loop starting on Core %d", xPortGetCoreID());
     while (true)
     {
+        // Check if lock status changed and save state if interrupted
+        if (OnlineLock::statusChanged())
+        {
+            if (OnlineLock::isLocked())
+            {
+                // Lock just engaged - save current state
+                OnlineLock::saveProcessState(APP_OPERATION_ID, false);
+                ESP_LOGI(TAG, "App interrupted by online lock - state saved");
+                return; // Exit immediately
+            }
+            else
+            {
+                // Lock just disengaged - resume from saved state
+                if (OnlineLock::hasSavedState())
+                {
+                    ProcessState state = OnlineLock::getSavedState();
+                    ESP_LOGI(TAG, "App resuming from saved state (Op ID: %u)", state.operation_id);
+                    OnlineLock::clearSavedState();
+                }
+            }
+        }
+
+        // If lock is active, skip processing
+        if (OnlineLock::isLocked())
+        {
+            ESP_LOGW(TAG, "Waiting for online lock to be released...");
+            vTaskDelay(pdMS_TO_TICKS(1000)); // Brief pause to avoid busy loop
+            return;
+        }
+
         App::update();
     }
 }

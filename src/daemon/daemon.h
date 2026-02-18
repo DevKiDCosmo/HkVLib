@@ -29,4 +29,6 @@ public:
      * @brief Start gID Daemon for
      */
     static void startgIDDaemon(void);
+
+    static void startOnlineLockDaemon(void);
 };
