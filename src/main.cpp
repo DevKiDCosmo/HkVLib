@@ -145,6 +145,13 @@ extern "C" void app_main(void)
             return;
         }
 
+        if (DEVICE_ID == -1)
+        {
+            Log::sys_error(TAG, "Device ID not yet assigned!");
+            delay(1000);
+            continue;
+        }
+
         App::update();
     }
 }

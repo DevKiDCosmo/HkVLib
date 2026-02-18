@@ -33,6 +33,7 @@
 #define DEBUG_FLAG_EXTENSIVE false
 #define DEBUG_ERROR true
 #define DEBUG_NORMAL true
+#define DEBUG_SERIAL true
 #define DEBUG_WARNING true
 
 // TEAM Configuration and Name

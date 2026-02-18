@@ -9,10 +9,7 @@ static const char *PRIV_DAEMON_TAG = "NET_DAEMON";
 // Network daemon task - runs asynchronously on Core 0
 static void networkDaemonTask(void *pvParameters)
 {
-    if (DEBUG_FLAG_EXTENSIVE)
-    {
-        Log::sys_info(PRIV_DAEMON_TAG, "Network daemon started on Core " + String(xPortGetCoreID()));
-    }
+    Log::sys_infoflag(PRIV_DAEMON_TAG, "Network daemon started on Core " + String(xPortGetCoreID()), DEBUG_FLAG_EXTENSIVE);
 
     // Wait a moment for initialization to complete
     delay(1000);

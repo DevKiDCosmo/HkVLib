@@ -15,10 +15,8 @@ static void heartbeatDaemonTask(void *pvParameters)
 
     while (true)
     {
-        if (DEBUG_FLAG_EXTENSIVE)
-        {
-            Log::sys_info(PRIV_DAEMON_TAG, "System is alive - Free heap: " + String(esp_get_free_heap_size()) + " bytes");
-        }
+
+        Log::sys_infoflag(PRIV_DAEMON_TAG, "System is alive - Free heap: " + String(esp_get_free_heap_size()) + " bytes", DEBUG_FLAG_EXTENSIVE);
 
         // Send heartbeat request to SERVER:PORT/heartbeat
         HttpResponse response = httpClient.get("/heartbeat");

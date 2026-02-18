@@ -8,10 +8,8 @@ static const char *PRIV_DAEMON_TAG = "SERIAL";
 
 void serialInputDaemonTask(void *pvParameters)
 {
-    if (DEBUG_FLAG_EXTENSIVE)
-    {
-        Log::sys_info(PRIV_DAEMON_TAG, "Serial input daemon started on Core " + String(xPortGetCoreID()));
-    }
+
+    Log::sys_infoflag(PRIV_DAEMON_TAG, "Serial input daemon started on Core " + String(xPortGetCoreID()), DEBUG_FLAG_EXTENSIVE);
 
     while (true)
     {
@@ -19,7 +17,7 @@ void serialInputDaemonTask(void *pvParameters)
         {
             String input = Serial.readStringUntil('\n');
             input.trim();
-            Log::sys_info(PRIV_DAEMON_TAG, "Received command: " + input);
+            Log::sys_infoflag(PRIV_DAEMON_TAG, "Received command: " + input, DEBUG_SERIAL);
 
             // Process commands here
             if (input.equalsIgnoreCase("wifi status"))
