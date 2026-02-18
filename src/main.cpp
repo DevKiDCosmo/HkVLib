@@ -3,99 +3,121 @@
 #include "connectivity/wifi/wifi.h"
 #include "network/request.h"
 #include "config/config.h"
+#include "esp_wifi.h"
 
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
 
 // Global WiFi instance shared between main and daemon
 WiFiConnect *g_wifi = nullptr;
-const char *g_ssid = nullptr;
-const char *g_password = nullptr;
+String g_ssid;
+String g_password;
+
+// Global device configuration variables
+int DEVICE_ID = 0;
+String MAC_ADDR;
 
 // ESP-IDF native serial setup (before Arduino initialization)
-static void setup_serial(void) {
+static void setup_serial(void)
+{
     esp_log_level_set(TAG, ESP_LOG_INFO);
     esp_log_level_set(NET_TAG, ESP_LOG_INFO);
 }
 
 // Network daemon task - runs asynchronously on Core 0
-void networkDaemonTask(void *pvParameters) {
+void networkDaemonTask(void *pvParameters)
+{
     ESP_LOGI(NET_TAG, "Network daemon started on Core %d", xPortGetCoreID());
-    
+
     // Wait a moment for initialization to complete
     vTaskDelay(pdMS_TO_TICKS(1000));
-    
-    while (true) {
-        if (g_wifi != nullptr && g_ssid != nullptr && g_password != nullptr) {
+
+    while (true)
+    {
+        if (g_wifi != nullptr && g_ssid.length() > 0 && g_password.length() > 0)
+        {
             // Check WiFi status periodically
-            if (!g_wifi->isConnected()) {
+            if (!g_wifi->isConnected())
+            {
                 ESP_LOGW(NET_TAG, "WiFi disconnected! Attempting reconnect...");
-                if (g_wifi->connect(g_ssid, g_password)) {
+                if (g_wifi->connect(g_ssid, g_password))
+                {
                     ESP_LOGI(NET_TAG, "WiFi reconnected. IP: %s", g_wifi->getLocalIP().c_str());
-                } else {
+                }
+                else
+                {
                     ESP_LOGE(NET_TAG, "WiFi reconnect failed!");
                 }
 
                 // TODO: ONLINE_LOCK logic
-
-            } else {
+            }
+            else
+            {
                 // WiFi is connected - just log status occasionally
                 static int counter = 0;
-                if (++counter % 12 == 0) {  // Every 60 seconds
+                if (++counter % 12 == 0)
+                { // Every 60 seconds
                     ESP_LOGI(NET_TAG, "WiFi OK - IP: %s", g_wifi->getLocalIP().c_str());
                     counter = 0;
                 }
             }
         }
-        
+
         // Check every 5 seconds
-        vTaskDelay(pdMS_TO_TICKS(WLAN_PRIORITY * 1000));  // Convert seconds to milliseconds
+        vTaskDelay(pdMS_TO_TICKS(WLAN_PRIORITY * 1000)); // Convert seconds to milliseconds
     }
 }
 
-void startNetworkDaemon(void) {
+void startNetworkDaemon(void)
+{
     ESP_LOGI(TAG, "Starting network daemon...");
-    
+
     // Create network daemon task on Core 0
     // Stack size: 4096 bytes, Priority: 1 (low), Core: 0
     xTaskCreatePinnedToCore(
-        networkDaemonTask,      // Task function
-        "NetworkDaemon",        // Task name
-        4096,                   // Stack size
-        NULL,                   // Parameter
-        1,                      // Priority
-        NULL,                   // Task handle
-        0                       // Core 0
+        networkDaemonTask, // Task function
+        "NetworkDaemon",   // Task name
+        4096,              // Stack size
+        NULL,              // Parameter
+        1,                 // Priority
+        NULL,              // Task handle
+        0                  // Core 0
     );
-    
+
     ESP_LOGI(TAG, "Network daemon started");
 }
 
-void heartbeatDaemonTask(void *pvParameters) {
+void heartbeatDaemonTask(void *pvParameters)
+{
     ESP_LOGI("HEARTBEAT", "Heartbeat daemon started on Core %d", xPortGetCoreID());
-    
+
     // Initialize HTTP client with server configuration
     HttpRequest httpClient(SERVER, PORT);
-    
-    while (true) {
+
+    while (true)
+    {
         ESP_LOGI("HEARTBEAT", "System is alive - Free heap: %d bytes", esp_get_free_heap_size());
-        
+
         // Send heartbeat request to SERVER:PORT/heartbeat
         HttpResponse response = httpClient.get("/heartbeat");
-        if (response.success) {
-            ESP_LOGI("HEARTBEAT", "Heartbeat sent successfully - Status: %d, Response: %s", 
+        if (response.success)
+        {
+            ESP_LOGI("HEARTBEAT", "Heartbeat sent successfully - Status: %d, Response: %s",
                      response.statusCode, response.body.c_str());
-        } else {
+        }
+        else
+        {
             ESP_LOGE("HEARTBEAT", "Heartbeat failed - Status: %d", response.statusCode);
         }
-        
-        vTaskDelay(pdMS_TO_TICKS(30000));  // Every 30 seconds
+
+        vTaskDelay(pdMS_TO_TICKS(30000)); // Every 30 seconds
     }
 }
 
-void startHeartbeatDaemon(void) {
+void startHeartbeatDaemon(void)
+{
     ESP_LOGI(TAG, "Starting heartbeat daemon...");
-    
+
     // Create a simple heartbeat task on Core 1
     xTaskCreatePinnedToCore(
         heartbeatDaemonTask,
@@ -104,41 +126,52 @@ void startHeartbeatDaemon(void) {
         NULL,
         1,
         NULL,
-        1
-    );
-    
+        1);
+
     ESP_LOGI(TAG, "Heartbeat daemon started");
 }
 
-void serialInputDaemonTask(void *pvParameters) {
+void serialInputDaemonTask(void *pvParameters)
+{
     ESP_LOGI("SERIAL", "Serial input daemon started on Core %d", xPortGetCoreID());
-    
-    while (true) {
-        if (Serial.available() > 0) {
+
+    while (true)
+    {
+        if (Serial.available() > 0)
+        {
             String input = Serial.readStringUntil('\n');
             input.trim();
             ESP_LOGI("SERIAL", "Received command: %s", input.c_str());
-            
-            // Process commands here (e.g., control hardware, change settings)
-            // For example, a simple command to check WiFi status:
-            if (input.equalsIgnoreCase("wifi status")) {
-                if (g_wifi != nullptr) {
-                    ESP_LOGI("SERIAL", "WiFi Status: %s, IP: %s", 
+
+            // Process commands here
+            if (input.equalsIgnoreCase("wifi status"))
+            {
+                if (g_wifi != nullptr)
+                {
+                    ESP_LOGI("SERIAL", "WiFi Status: %s, IP: %s",
                              g_wifi->isConnected() ? "Connected" : "Disconnected",
                              g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "N/A");
-                } else {
+                }
+                else
+                {
                     ESP_LOGW("SERIAL", "WiFi not initialized");
                 }
             }
+            else if (input.equalsIgnoreCase("reboot"))
+            {
+                ESP_LOGI("SERIAL", "Rebooting system...");
+                esp_restart();
+            }
         }
-        
-        vTaskDelay(pdMS_TO_TICKS(100));  // Check for input every 100ms
+
+        vTaskDelay(pdMS_TO_TICKS(100)); // Check for input every 100ms
     }
 }
 
-void startSerialInputDaemon(void) {
+void startSerialInputDaemon(void)
+{
     ESP_LOGI(TAG, "Starting serial input daemon...");
-    
+
     // Create a simple serial input task on Core 1
     xTaskCreatePinnedToCore(
         serialInputDaemonTask,
@@ -147,11 +180,51 @@ void startSerialInputDaemon(void) {
         NULL,
         1,
         NULL,
-        1
-    );
+        1);
 }
 
-void init_app(void) {
+void dhcpID(void)
+{
+    // Get MAC Address
+    uint8_t mac[6];
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+
+    // Format MAC address as String (XX:XX:XX:XX:XX:XX)
+    char macBuf[18];
+    snprintf(macBuf, sizeof(macBuf), "%02X:%02X:%02X:%02X:%02X:%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    String macStr(macBuf);
+
+    ESP_LOGI("DHCP_ID", "Device MAC: %s", macStr.c_str());
+
+    // Store MAC address globally (safe: String owns its memory)
+    MAC_ADDR = macStr;
+
+    // Initialize HTTP client with server configuration
+    HttpRequest httpClient(SERVER, PORT);
+
+    ESP_LOGI("DHCP_ID", "Requesting device ID from server...");
+
+    // Send ID request to SERVER:PORT/id/:mac/:teamid
+    String endpoint = "/id/" + macStr + "/" + String(TEAMID);
+    HttpResponse response = httpClient.get(endpoint);
+
+    if (response.success && response.statusCode == 200)
+    {
+        // Parse device ID from response body
+        DEVICE_ID = response.body.toInt();
+        ESP_LOGI("DHCP_ID", "Device ID assigned: %d (MAC: %s, Team: %d)",
+                 DEVICE_ID, macStr.c_str(), TEAMID);
+    }
+    else
+    {
+        ESP_LOGE("DHCP_ID", "Failed to get device ID - Status: %d", response.statusCode);
+        DEVICE_ID = -1; // Indicate failure
+    }
+}
+
+void init_app(void)
+{
     // ESP-IDF native logging (no Arduino dependency)
     setup_serial();
     ESP_LOGI(TAG, "=================================");
@@ -173,17 +246,23 @@ void init_app(void) {
     g_ssid = WLAN_SSID;
     g_password = WLAN_PASSWORD;
 
-    if (g_wifi->connect(g_ssid, g_password)) {
+    if (g_wifi->connect(g_ssid, g_password))
+    {
         ESP_LOGI(TAG, "WiFi connected successfully");
         ESP_LOGI(TAG, "IP Address: %s", g_wifi->getLocalIP().c_str());
-    } else {
+    }
+    else
+    {
         ESP_LOGE(TAG, "WiFi connection failed! Attempting backup credentials...");
         g_ssid = BACKUP_WLAN_SSID;
         g_password = BACKUP_WLAN_PASSWORD;
-        if (g_wifi->connect(g_ssid, g_password)) {
+        if (g_wifi->connect(g_ssid, g_password))
+        {
             ESP_LOGI(TAG, "Backup WiFi connected successfully");
             ESP_LOGI(TAG, "IP Address: %s", g_wifi->getLocalIP().c_str());
-        } else {
+        }
+        else
+        {
             ESP_LOGE(TAG, "WiFi connection failed! Daemon will retry... with old credentials");
             g_ssid = WLAN_SSID;
             g_password = WLAN_PASSWORD;
@@ -191,7 +270,7 @@ void init_app(void) {
     }
 
     ESP_LOGI(TAG, "Setup complete. Starting background services...");
-    
+
     // Start network daemon after WiFi init
     ESP_LOGI(TAG, "Starting daemons...");
     startNetworkDaemon();
@@ -201,26 +280,31 @@ void init_app(void) {
     startSerialInputDaemon();
 
     // Starting DHCP Client Configuration
+
     // Starting DHCP ID Client Configuration
+    dhcpID();
 }
 
-extern "C" void app_main(void) {
+extern "C" void app_main(void)
+{
     init_app();
 
     // Main loop runs independently on Core 1
     ESP_LOGI(TAG, "Main loop starting on Core %d", xPortGetCoreID());
-    while (true) {
+    while (true)
+    {
 
         // Main application logic goes here
         ESP_LOGI(TAG, "Main loop - Free heap: %d bytes", esp_get_free_heap_size());
-        vTaskDelay(pdMS_TO_TICKS(10000));  // 10 second interval
+        vTaskDelay(pdMS_TO_TICKS(10000)); // 10 second interval
 
         ESP_LOGI(TAG, "Doing some work in the main loop..., IP: %s", g_wifi->isConnected() ? g_wifi->getLocalIP().c_str() : "Not connected");
 
         // Using Makeblock-Libary for actual hardware interaction (e.g., sensors, actuators) would go here
 
         // As test. Try to disconnect to WiFi.
-        if (g_wifi->isConnected()) {
+        if (g_wifi->isConnected())
+        {
             ESP_LOGI(TAG, "Disconnecting WiFi to test reconnect logic...");
             g_wifi->disconnect();
         }

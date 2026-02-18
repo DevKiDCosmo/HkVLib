@@ -7,7 +7,7 @@
 class WiFiConnect {
 public:
     WiFiConnect();
-    bool connect(const char* ssid, const char* password, unsigned long timeout_ms = 10000);
+    bool connect(const String& ssid, const String& password, unsigned long timeout_ms = 10000);
     bool isConnected();
     void disconnect();
     String getLocalIP();

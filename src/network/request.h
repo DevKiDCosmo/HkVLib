@@ -18,22 +18,22 @@ struct HttpResponse {
 
 class HttpRequest {
 public:
-    HttpRequest(const char* server, int port);
-    
-    HttpResponse sendRequest(HttpMethod method, const char* endpoint);
-    HttpResponse sendRequest(HttpMethod method, const char* endpoint, const char* payload);
-    HttpResponse sendRequest(HttpMethod method, const char* endpoint, const char* payload, const char* contentType);
-    
-    HttpResponse get(const char* endpoint);
-    HttpResponse post(const char* endpoint, const char* payload);
-    HttpResponse post(const char* endpoint, const char* payload, const char* contentType);
-    HttpResponse put(const char* endpoint, const char* payload);
-    HttpResponse del(const char* endpoint);
-    
+    HttpRequest(const String& server, int port);
+
+    HttpResponse sendRequest(HttpMethod method, const String& endpoint);
+    HttpResponse sendRequest(HttpMethod method, const String& endpoint, const String& payload);
+    HttpResponse sendRequest(HttpMethod method, const String& endpoint, const String& payload, const String& contentType);
+
+    HttpResponse get(const String& endpoint);
+    HttpResponse post(const String& endpoint, const String& payload);
+    HttpResponse post(const String& endpoint, const String& payload, const String& contentType);
+    HttpResponse put(const String& endpoint, const String& payload);
+    HttpResponse del(const String& endpoint);
+
 private:
-    char serverUrl[64];
-    
-    HttpResponse send(HttpMethod method, const char* endpoint, const char* payload, const char* contentType);
+    String serverUrl;
+
+    HttpResponse send(HttpMethod method, const String& endpoint, const String& payload, const String& contentType);
 };
 
 #endif

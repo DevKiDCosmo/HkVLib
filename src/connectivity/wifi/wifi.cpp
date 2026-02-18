@@ -4,10 +4,10 @@
 
 WiFiConnect::WiFiConnect() : connected(false) {}
 
-bool WiFiConnect::connect(const char* ssid, const char* password, unsigned long timeout_ms) {
-    ESP_LOGI("WIFI", "Connecting to WiFi: %s", ssid);
+bool WiFiConnect::connect(const String& ssid, const String& password, unsigned long timeout_ms) {
+    ESP_LOGI("WIFI", "Connecting to WiFi: %s", ssid.c_str());
     
-    WiFi.begin(ssid, password);
+    WiFi.begin(ssid.c_str(), password.c_str());
     
     unsigned long startAttempt = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < timeout_ms) {

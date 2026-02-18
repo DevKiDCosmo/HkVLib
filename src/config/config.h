@@ -1,16 +1,21 @@
 
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#include <Arduino.h>
+
 // WLAN configuration
 #define WLAN_SSID "Vodafone-9A6C"
 #define WLAN_PASSWORD "nFxDLFAv4jYpDbgt"
 #define ONLINE_MANDATORY true
 #define ONLINE_LOCK false // If ofline, lock the device to prevent any operation until online again (use with ONLINE_MANDATORY)
-#define WLAN_PRIORITY 20 // in s interval for tries. Std: 5
+#define WLAN_PRIORITY 20  // in s interval for tries. Std: 5
 
 #define BACKUP_WLAN_SSID "NAMANAMANAMANAN"
 #define BACKUP_WLAN_PASSWORD "Namnamnam"
 
 // Server configuration
-#define SERVER "192.168.0.70" 
+#define SERVER "192.168.0.171"
 #define PORT 8080
 
 // Firmware
@@ -21,3 +26,14 @@
 
 // DEBUG Config
 #define DEBUG_FLAG false
+
+// TEAM Configuration and Name
+#define TEAMID 0
+#define TEAM_NAME ""
+#define DEVICE_NAME ""
+
+// GLOBAL Variables (defined in main.cpp)
+extern int DEVICE_ID;
+extern String MAC_ADDR;
+
+#endif // CONFIG_H

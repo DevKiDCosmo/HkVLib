@@ -370,7 +370,7 @@ Edit `include/wifi_config.h`:
 **MQTT Broker:**
 Configure in main application:
 ```cpp
-const char* mqtt_broker = "192.168.1.100";
+const string mqtt_broker = "192.168.1.100";
 int mqtt_port = 1883;
 ```
 

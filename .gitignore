@@ -7,3 +7,6 @@
 tools/.venv
 server/.venv
 example/Makeblock-Libraries
+example/mlib
+example/src
+.DS_Store

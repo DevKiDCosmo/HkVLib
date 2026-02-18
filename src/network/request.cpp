@@ -5,53 +5,52 @@
 
 static const char *TAG = "HTTP_REQUEST";
 
-HttpRequest::HttpRequest(const char* server, int port) {
-    snprintf(serverUrl, sizeof(serverUrl), "http://%s:%d", server, port);
+HttpRequest::HttpRequest(const String& server, int port) {
+    serverUrl = "http://" + server + ":" + String(port);
 }
 
-HttpResponse HttpRequest::send(HttpMethod method, const char* endpoint, const char* payload, const char* contentType) {
+HttpResponse HttpRequest::send(HttpMethod method, const String& endpoint, const String& payload, const String& contentType) {
     HttpResponse response = {-1, "", false};
-    
+
     if (WiFi.status() != WL_CONNECTED) {
         ESP_LOGE(TAG, "WiFi not connected");
         return response;
     }
-    
+
     HTTPClient http;
-    char url[128];
-    snprintf(url, sizeof(url), "%s%s", serverUrl, endpoint);
-    
-    ESP_LOGI(TAG, "Sending %s request to %s", 
+    String url = serverUrl + endpoint;
+
+    ESP_LOGI(TAG, "Sending %s request to %s",
              method == HttpMethod::GET ? "GET" :
              method == HttpMethod::POST ? "POST" :
-             method == HttpMethod::PUT ? "PUT" : "DELETE", url);
-    
+             method == HttpMethod::PUT ? "PUT" : "DELETE", url.c_str());
+
     http.begin(url);
-    
-    if (contentType) {
+
+    if (contentType.length() > 0) {
         http.addHeader("Content-Type", contentType);
     }
-    
+
     int httpCode;
     switch (method) {
         case HttpMethod::GET:
             httpCode = http.GET();
             break;
         case HttpMethod::POST:
-            httpCode = http.POST(payload ? payload : "");
+            httpCode = http.POST(payload);
             break;
         case HttpMethod::PUT:
-            httpCode = http.PUT(payload ? payload : "");
+            httpCode = http.PUT(payload);
             break;
         case HttpMethod::DELETE:
-            httpCode = http.sendRequest("DELETE", payload ? payload : "");
+            httpCode = http.sendRequest("DELETE", payload);
             break;
         default:
             httpCode = -1;
     }
-    
+
     response.statusCode = httpCode;
-    
+
     if (httpCode > 0) {
         response.success = (httpCode >= 200 && httpCode < 300);
         response.body = http.getString();
@@ -59,39 +58,39 @@ HttpResponse HttpRequest::send(HttpMethod method, const char* endpoint, const ch
     } else {
         ESP_LOGE(TAG, "HTTP request failed, error: %s", http.errorToString(httpCode).c_str());
     }
-    
+
     http.end();
     return response;
 }
 
-HttpResponse HttpRequest::sendRequest(HttpMethod method, const char* endpoint) {
-    return send(method, endpoint, nullptr, nullptr);
+HttpResponse HttpRequest::sendRequest(HttpMethod method, const String& endpoint) {
+    return send(method, endpoint, "", "");
 }
 
-HttpResponse HttpRequest::sendRequest(HttpMethod method, const char* endpoint, const char* payload) {
+HttpResponse HttpRequest::sendRequest(HttpMethod method, const String& endpoint, const String& payload) {
     return send(method, endpoint, payload, "application/json");
 }
 
-HttpResponse HttpRequest::sendRequest(HttpMethod method, const char* endpoint, const char* payload, const char* contentType) {
+HttpResponse HttpRequest::sendRequest(HttpMethod method, const String& endpoint, const String& payload, const String& contentType) {
     return send(method, endpoint, payload, contentType);
 }
 
-HttpResponse HttpRequest::get(const char* endpoint) {
-    return send(HttpMethod::GET, endpoint, nullptr, nullptr);
+HttpResponse HttpRequest::get(const String& endpoint) {
+    return send(HttpMethod::GET, endpoint, "", "");
 }
 
-HttpResponse HttpRequest::post(const char* endpoint, const char* payload) {
+HttpResponse HttpRequest::post(const String& endpoint, const String& payload) {
     return send(HttpMethod::POST, endpoint, payload, "application/json");
 }
 
-HttpResponse HttpRequest::post(const char* endpoint, const char* payload, const char* contentType) {
+HttpResponse HttpRequest::post(const String& endpoint, const String& payload, const String& contentType) {
     return send(HttpMethod::POST, endpoint, payload, contentType);
 }
 
-HttpResponse HttpRequest::put(const char* endpoint, const char* payload) {
+HttpResponse HttpRequest::put(const String& endpoint, const String& payload) {
     return send(HttpMethod::PUT, endpoint, payload, "application/json");
 }
 
-HttpResponse HttpRequest::del(const char* endpoint) {
-    return send(HttpMethod::DELETE, endpoint, nullptr, nullptr);
+HttpResponse HttpRequest::del(const String& endpoint) {
+    return send(HttpMethod::DELETE, endpoint, "", "");
 }

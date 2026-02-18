@@ -6,8 +6,11 @@ from typing import Optional
 from flask import Flask, jsonify
 import paho.mqtt.client as mqtt
 
+from microservice.dhcpid import dhcpid_bp, load_csv, start_save_thread, stop_save_thread
+
 
 app = Flask(__name__)
+app.register_blueprint(dhcpid_bp)
 
 MQTT_HOST = os.getenv("MQTT_HOST", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
@@ -78,8 +81,13 @@ def run_http() -> None:
 
 
 if __name__ == "__main__":
+    # Load persisted device database and start periodic CSV saving
+    load_csv()
+    start_save_thread()
+
     mqtt_service.start()
     try:
         run_http()
     finally:
         mqtt_service.stop()
+        stop_save_thread()
