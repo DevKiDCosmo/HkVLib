@@ -5,15 +5,15 @@
 #include <Arduino.h>
 
 // WLAN configuration
-#define WLAN_SSID "Vodafone-9A6C"
-#define WLAN_PASSWORD "nFxDLFAv4jYpDbgt"
+#define WLAN_SSID "LGS intern"
+#define WLAN_PASSWORD "KPSMatInfNatTec3930"
 #define ONLINE_MANDATORY true
 #define ONLINE_LOCK false // If ofline, lock the device to prevent any operation until online again (use with ONLINE_MANDATORY)
 #define WLAN_PRIORITY 20  // in s interval for tries. Std: 5
 #define WLAN_LOCK true    // Doesn't allow to conecect to any other network after init phase.
 
-#define BACKUP_WLAN_SSID "NAMANAMANAMANAN"
-#define BACKUP_WLAN_PASSWORD "Namnamnam"
+#define BACKUP_WLAN_SSID "Vodafone-9A6C"
+#define BACKUP_WLAN_PASSWORD "nFxDLFAv4jYpDbgt"
 
 // Server configuration
 #define SERVER "192.168.0.171"
@@ -36,11 +36,12 @@
 #define DEBUG_NORMAL true
 #define DEBUG_SERIAL true
 #define DEBUG_WARNING true
+#define DEBUG_VERBOSE true
 
 // TEAM Configuration and Name
 #define TEAMID 0
-#define TEAM_NAME ""
-#define DEVICE_NAME ""
+#define TEAM_NAME "HelloWorld"
+#define DEVICE_NAME "HelloWorldmBot"
 
 // Forward declaration (full definition in connectivity/wifi/wifi.h)
 class WiFiConnect;

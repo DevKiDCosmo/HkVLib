@@ -23,3 +23,9 @@ void Log::sys_error(const char *Tag, String msg)
     if (DEBUG_ERROR)
         ESP_LOGE(Tag, "%s", msg.c_str());
 }
+
+void Log::sys_debug(const char *Tag, String msg)
+{
+    if (DEBUG_VERBOSE)
+        ESP_LOGD(Tag, "%s", msg.c_str());
+}

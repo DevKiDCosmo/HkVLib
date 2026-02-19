@@ -6,6 +6,6 @@
 class Utility
 {
 public:
-    static String toHex(const uint8_t *data, size_t len);
     static String wlan_lock(String ssid, String pw);
+    static String toHex(const uint8_t *data, size_t len);
 };

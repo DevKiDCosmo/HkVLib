@@ -10,4 +10,5 @@ public:
 
     static void sys_warning(const char *Tag, String msg);
     static void sys_error(const char *Tag, String msg);
+    static void sys_debug(const char *Tag, String msg);
 };

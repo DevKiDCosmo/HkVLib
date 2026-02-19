@@ -4,9 +4,50 @@
 #include "../../utility/utility.h"
 #include "../../utility/init.h"
 
-WiFiConnect::WiFiConnect() : connected(false) {}
+WiFiConnect::WiFiConnect() : connected(false), device_name(""), last_ssid(""), last_password(""), last_timeout_ms(10000) {}
 static String Hash_WIFI;
 static String Hash_WIFI_BACKUP;
+
+void WiFiConnect::setDeviceName(const String &device_name)
+{
+    String effective_name = device_name;
+
+    if (device_name.isEmpty())
+    {
+        Log::sys_warning("WIFI", "Device name is empty, using default hostname");
+        Log::sys_warning("WIFI", "Default hostname will be used: " + String(WiFi.getHostname()));
+        effective_name = String(WiFi.getHostname());
+    }
+
+    if (effective_name.length() > 32)
+    {
+        Log::sys_warning("WIFI", "Device name too long, truncating to 32 characters");
+        effective_name = effective_name.substring(0, 32);
+    }
+    Log::sys_info("WIFI", "Setting device hostname: " + effective_name);
+    this->device_name = effective_name;
+
+    // ESP32 hostname is applied when starting a station connection. If already
+    // connected, reconnect so the new hostname is effective immediately.
+    if (isConnected())
+    {
+        if (last_ssid.isEmpty())
+        {
+            Log::sys_warning("WIFI", "Hostname updated, but no stored WiFi credentials available for reconnect");
+            return;
+        }
+
+        Log::sys_info("WIFI", "Reconnecting WiFi to apply new hostname");
+        WiFi.disconnect(false, false);
+        WiFi.setHostname(effective_name.c_str());
+        connected = false;
+
+        if (!connect(last_ssid, last_password, last_timeout_ms))
+        {
+            Log::sys_error("WIFI", "Failed to reconnect after hostname change");
+        }
+    }
+}
 
 bool WiFiConnect::connect(const String &ssid, const String &password, unsigned long timeout_ms)
 {
@@ -38,7 +79,24 @@ bool WiFiConnect::connect(const String &ssid, const String &password, unsigned l
         }
     }
 
+    last_ssid = ssid;
+    last_password = password;
+    last_timeout_ms = timeout_ms;
+
     Log::sys_info("WIFI", "Connecting to WiFi: " + ssid);
+
+    if (!device_name.isEmpty())
+    {
+        WiFi.mode(WIFI_STA);
+        if (WiFi.setHostname(device_name.c_str()))
+        {
+            Log::sys_info("WIFI", "Device hostname set: " + device_name);
+        }
+        else
+        {
+            Log::sys_warning("WIFI", "Failed to set device hostname: " + device_name);
+        }
+    }
 
     WiFi.begin(ssid.c_str(), password.c_str());
 

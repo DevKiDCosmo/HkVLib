@@ -8,6 +8,7 @@ class WiFiConnect
 {
 public:
     WiFiConnect();
+    void setDeviceName(const String &device_name);
     bool connect(const String &ssid, const String &password, unsigned long timeout_ms = 10000);
     bool isConnected();
     void disconnect();
@@ -28,6 +29,10 @@ public:
 
 private:
     bool connected;
+    String device_name;
+    String last_ssid;
+    String last_password;
+    unsigned long last_timeout_ms;
 };
 
 #endif // WIFI_CONNECT_H

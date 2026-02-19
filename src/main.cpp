@@ -21,6 +21,7 @@
 #include "unittest/psram.h"
 #include "unittest/storage.h"
 #include "utility/init.h"
+#include "unittest/initut.h"
 
 #define APP_OPERATION_ID 0x01 // Operation ID for main app loop
 
@@ -69,6 +70,7 @@ namespace
         ok = runTimedUnitTest("Storage Unit test", &UnitTest::runStorageTest, false) && ok;
         ok = runTimedUnitTest("PSRAM Unit test", &UnitTest::runPsramTest, false) && ok;
         ok = runTimedUnitTest("Math Unit test", &UnitTest::runMathTest, false) && ok;
+        ok = runTimedUnitTest("Init Unit test", &UnitTest::initUnitTests, true) && ok;
 
         context->allPassed = ok;
         context->done = true;
@@ -159,6 +161,8 @@ void init_app(void)
         }
     }
 
+    g_wifi->setDeviceName(DEVICE_NAME);
+
     Log::sys_info(TAG, "Setup complete. Starting background services...");
 
     // Start network daemon after WiFi init
@@ -206,12 +210,10 @@ void init_app(void)
         Log::sys_warning(TAG, "One or more non-critical unit tests failed");
     }
 
-    delay(2000); // Brief pause before starting main loop
-
     // Start Health Daemons
     HealthDaemons::startHealthDaemons();
 
-    // Init Extensive Platform
+    // Init Extensive Platform Cyper PI Lib
 
     // Init done
     Init::initialized();
@@ -259,6 +261,7 @@ extern "C" void app_main(void)
         if (DEVICE_ID == -1)
         {
             Log::sys_error(TAG, "Device ID not yet assigned!");
+            GID::gID(); // Attempt to request ID immediately instead of waiting for next heartbeat
             delay(5000);
             continue;
         }
