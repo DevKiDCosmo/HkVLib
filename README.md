@@ -6,6 +6,12 @@ ESP32-WROVER-B Firmware Library for mBot2 Robotics Competition
 
 HkVLib is a hybrid C++/Python firmware library designed for managing 30+ mBot2 robots in a hackathon environment. It provides real-time control, MQTT-based communication, auto-provisioning, and automatic verification systems.
 
+## Stoarage & Mem Specs
+Onboard memory	ROM	448 KB
+SRAM	520 KB
+Extended memory	SPI Flash	8 MB
+PSRAM	8 MB
+
 ## System Architecture
 
 ```

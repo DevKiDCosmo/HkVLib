@@ -1,5 +1,10 @@
 #include "esp_log.h"
 #include <Arduino.h>
+#include "esp_heap_caps.h"
+#include "esp_spi_flash.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "connectivity/wifi/wifi.h"
 #include "network/request.h"
 #include "config/config.h"
@@ -11,12 +16,80 @@
 #include "onlinelock/onlinelock.h"
 #include "daemon/health/health.h"
 #include "serial/log.h"
+#include "unittest/math.h"
+#include "unittest/memory.h"
+#include "unittest/psram.h"
+#include "unittest/storage.h"
 #include "utility/init.h"
 
 #define APP_OPERATION_ID 0x01 // Operation ID for main app loop
 
 static const char *TAG = "MAIN";
 static const char *NET_TAG = "NET_DAEMON";
+
+namespace
+{
+    using UnitTestFn = bool (*)();
+    constexpr std::uint32_t kUnitTestTaskStackSize = 12288u;
+
+    struct UnitTestTaskContext
+    {
+        volatile bool done;
+        volatile bool allPassed;
+    };
+
+    bool runTimedUnitTest(const char *testName, UnitTestFn testFn, bool restartOnFail)
+    {
+        const std::int64_t startUs = esp_timer_get_time();
+        const bool success = testFn();
+        const std::int64_t elapsedMs = (esp_timer_get_time() - startUs) / 1000;
+
+        if (success)
+        {
+            Log::sys_info(TAG, String(testName) + " successful (" + String(elapsedMs) + " ms)");
+            return true;
+        }
+
+        Log::sys_error(TAG, String(testName) + " failed (" + String(elapsedMs) + " ms)");
+        if (restartOnFail)
+        {
+            delay(2000);
+            esp_restart();
+        }
+
+        return false;
+    }
+
+    void runUnitTestsTask(void *param)
+    {
+        auto *context = static_cast<UnitTestTaskContext *>(param);
+
+        bool ok = true;
+        ok = runTimedUnitTest("RAM Unit test", &UnitTest::runMemoryTest, true) && ok;
+        ok = runTimedUnitTest("Storage Unit test", &UnitTest::runStorageTest, false) && ok;
+        ok = runTimedUnitTest("PSRAM Unit test", &UnitTest::runPsramTest, false) && ok;
+        ok = runTimedUnitTest("Math Unit test", &UnitTest::runMathTest, false) && ok;
+
+        context->allPassed = ok;
+        context->done = true;
+        vTaskDelete(nullptr);
+    }
+
+    void logMemoryProfile()
+    {
+        const std::size_t internalTotal = heap_caps_get_total_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        const std::size_t internalFree = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        const std::size_t psramTotal = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
+        const std::size_t psramFree = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+        const std::size_t flashChip = spi_flash_get_chip_size();
+
+        Log::sys_info(TAG, "Memory profile: internal total=" + String(internalTotal / 1024u) +
+                               " KiB, internal free=" + String(internalFree / 1024u) + " KiB");
+        Log::sys_info(TAG, "Memory profile: PSRAM total=" + String(psramTotal / 1024u) +
+                               " KiB, PSRAM free=" + String(psramFree / 1024u) + " KiB");
+        Log::sys_info(TAG, "Memory profile: SPI flash chip=" + String(flashChip / (1024u * 1024u)) + " MiB");
+    }
+} // namespace
 
 // Global WiFi instance shared between main and daemon
 WiFiConnect *g_wifi = nullptr;
@@ -46,6 +119,8 @@ void init_app(void)
     // Initialize Arduino framework
     initArduino();
     Log::sys_info(TAG, "Arduino framework initialized");
+
+    logMemoryProfile();
 
     // Init Display Component
 
@@ -103,7 +178,35 @@ void init_app(void)
     GID::gID();
     Daemon::startgIDDaemon();
 
-    // Unit Test
+    // Unit Test (run in dedicated task to avoid main-task stack overflow)
+    UnitTestTaskContext testContext = {false, false};
+    BaseType_t created = xTaskCreatePinnedToCore(
+        runUnitTestsTask,
+        "unit_test_task",
+        kUnitTestTaskStackSize,
+        &testContext,
+        tskIDLE_PRIORITY + 1,
+        nullptr,
+        xPortGetCoreID());
+
+    if (created != pdPASS)
+    {
+        Log::sys_error(TAG, "Failed to create unit test task");
+        delay(2000);
+        esp_restart();
+    }
+
+    while (!testContext.done)
+    {
+        delay(10);
+    }
+
+    if (!testContext.allPassed)
+    {
+        Log::sys_warning(TAG, "One or more non-critical unit tests failed");
+    }
+
+    delay(2000); // Brief pause before starting main loop
 
     // Start Health Daemons
     HealthDaemons::startHealthDaemons();

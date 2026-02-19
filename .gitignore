@@ -11,3 +11,5 @@ example/mlib
 example/src
 .DS_Store
 server/data/devices.csv
+
+example/*
