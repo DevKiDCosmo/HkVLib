@@ -10,6 +10,7 @@
 #define ONLINE_MANDATORY true
 #define ONLINE_LOCK false // If ofline, lock the device to prevent any operation until online again (use with ONLINE_MANDATORY)
 #define WLAN_PRIORITY 20  // in s interval for tries. Std: 5
+#define WLAN_LOCK true    // Doesn't allow to conecect to any other network after init phase.
 
 #define BACKUP_WLAN_SSID "NAMANAMANAMANAN"
 #define BACKUP_WLAN_PASSWORD "Namnamnam"

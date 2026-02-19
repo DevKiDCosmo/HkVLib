@@ -11,6 +11,7 @@
 #include "onlinelock/onlinelock.h"
 #include "daemon/health/health.h"
 #include "serial/log.h"
+#include "utility/init.h"
 
 #define APP_OPERATION_ID 0x01 // Operation ID for main app loop
 
@@ -45,6 +46,10 @@ void init_app(void)
     // Initialize Arduino framework
     initArduino();
     Log::sys_info(TAG, "Arduino framework initialized");
+
+    // Init Display Component
+
+    // Init Configuration
 
     // Initialize Serial for reading commands
     Serial.begin(115200);
@@ -104,6 +109,9 @@ void init_app(void)
     HealthDaemons::startHealthDaemons();
 
     // Init Extensive Platform
+
+    // Init done
+    Init::initialized();
 }
 
 extern "C" void app_main(void)

@@ -1,11 +1,43 @@
 #include "wifi.h"
 #include "../../config/config.h"
 #include "../../serial/log.h"
+#include "../../utility/utility.h"
+#include "../../utility/init.h"
 
 WiFiConnect::WiFiConnect() : connected(false) {}
+static String Hash_WIFI;
+static String Hash_WIFI_BACKUP;
 
 bool WiFiConnect::connect(const String &ssid, const String &password, unsigned long timeout_ms)
 {
+    if (WLAN_LOCK)
+    {
+        String current_hash = Utility::wlan_lock(ssid, password);
+
+        if (Hash_WIFI.isEmpty() && Init::value())
+        {
+            Hash_WIFI = current_hash;
+        }
+        else if (Hash_WIFI == current_hash)
+        {
+            Log::sys_info("WIFI", "WLAN Lock hash matches primary credentials");
+        }
+        else if (Hash_WIFI_BACKUP.isEmpty() && Init::value())
+        {
+            // allow one backup credential set
+            Hash_WIFI_BACKUP = current_hash;
+        }
+        else if (Hash_WIFI_BACKUP == current_hash)
+        {
+            Log::sys_info("WIFI", "WLAN Lock hash matches backup credentials");
+        }
+        else
+        {
+            Log::sys_error("WIFI", "WLAN Lock hash mismatch!");
+            return false;
+        }
+    }
+
     Log::sys_info("WIFI", "Connecting to WiFi: " + ssid);
 
     WiFi.begin(ssid.c_str(), password.c_str());
