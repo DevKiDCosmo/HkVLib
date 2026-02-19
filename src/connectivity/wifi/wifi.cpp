@@ -14,7 +14,7 @@ bool WiFiConnect::connect(const String &ssid, const String &password, unsigned l
     {
         String current_hash = Utility::wlan_lock(ssid, password);
 
-        if (Hash_WIFI.isEmpty() && Init::value())
+        if (Hash_WIFI.isEmpty() && !Init::value())
         {
             Hash_WIFI = current_hash;
         }
@@ -22,7 +22,7 @@ bool WiFiConnect::connect(const String &ssid, const String &password, unsigned l
         {
             Log::sys_info("WIFI", "WLAN Lock hash matches primary credentials");
         }
-        else if (Hash_WIFI_BACKUP.isEmpty() && Init::value())
+        else if (Hash_WIFI_BACKUP.isEmpty() && !Init::value())
         {
             // allow one backup credential set
             Hash_WIFI_BACKUP = current_hash;
