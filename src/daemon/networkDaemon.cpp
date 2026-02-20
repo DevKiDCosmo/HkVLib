@@ -16,6 +16,7 @@ static void networkDaemonTask(void *pvParameters)
 
     while (true)
     {
+        //? Check if backup creedentials are used if login with backup were once succesful.
         if (g_wifi != nullptr && g_ssid.length() > 0 && g_password.length() > 0)
         {
             // Check WiFi status periodically

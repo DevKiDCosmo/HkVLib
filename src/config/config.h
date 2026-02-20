@@ -3,6 +3,7 @@
 #define CONFIG_H
 
 #include <Arduino.h>
+#include "../components/cyberpi/src/cyberpi.h"
 
 // WLAN configuration
 #define WLAN_SSID "LGS intern"
@@ -53,5 +54,7 @@ extern String MAC_ADDR;
 extern WiFiConnect *g_wifi;
 extern String g_ssid;
 extern String g_password;
+
+extern CyberPi cyber;
 
 #endif // CONFIG_H

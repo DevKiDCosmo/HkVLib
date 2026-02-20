@@ -23,6 +23,10 @@
 #include "utility/init.h"
 #include "unittest/initut.h"
 
+#include "display/display.h"
+
+#include "components/cyberpi/src/cyberpi.h"
+
 #define APP_OPERATION_ID 0x01 // Operation ID for main app loop
 
 static const char *TAG = "MAIN";
@@ -102,6 +106,10 @@ String g_password;
 int DEVICE_ID = 0;
 String MAC_ADDR;
 
+CyberPi cyber;
+uint8_t samples[128];
+int idx = 0;
+
 // ESP-IDF native serial setup (before Arduino initialization)
 static void setup_serial(void)
 {
@@ -115,6 +123,7 @@ void init_app(void)
     setup_serial();
     Log::sys_info(TAG, "=================================");
     Log::sys_info(TAG, "HkVLib Firmware Starting");
+    Log::sys_info(TAG, "Build: " + String(BUILD) + ", Date: " + String(DATE) + ", Version: " + String(VERSION));
     Log::sys_info(TAG, "Free heap: " + String(esp_get_free_heap_size()) + " bytes");
     Log::sys_info(TAG, "=================================");
 
@@ -125,12 +134,26 @@ void init_app(void)
     logMemoryProfile();
 
     // Init Display Component
+    cyber.begin();
+    Display::initialize();
+    int font_size = 16;
+    const wchar_t *titleText = L"HkVLib Firmware";
+    Bitmap *bitmap = cyber.create_text(const_cast<wchar_t *>(titleText), 0xffff, font_size);
+    cyber.set_bitmap(4, 4, bitmap);
+    cyber.render_lcd();
+
+    // Init Unit Test required for init phase (critical tests that must pass for safe operation, otherwise restart)
+    // Unit tests for: RTOS, WiFi, RAM, Security
 
     // Init Configuration
 
     // Initialize Serial for reading commands
     Serial.begin(115200);
     Log::sys_info(TAG, "Serial initialized at 115200 baud");
+
+    Display::draw_boot(cyber);
+
+    Display::draw_log(cyber, "Initializing WiFi...");
 
     // Initialize WiFi using Arduino library
     Log::sys_info(TAG, "Initializing WiFi...");
@@ -146,6 +169,7 @@ void init_app(void)
     else
     {
         Log::sys_error(TAG, "WiFi connection failed! Attempting backup credentials...");
+        Display::draw_log(cyber, "WiFi connection failed! Attempting backup credentials...");
         g_ssid = BACKUP_WLAN_SSID;
         g_password = BACKUP_WLAN_PASSWORD;
         if (g_wifi->connect(g_ssid, g_password))
@@ -156,10 +180,13 @@ void init_app(void)
         else
         {
             Log::sys_error(TAG, "WiFi connection failed! Daemon will retry... with old credentials");
+            Display::draw_log(cyber, "WiFi connection failed! Daemon will retry... with old credentials");
             g_ssid = WLAN_SSID;
             g_password = WLAN_PASSWORD;
         }
     }
+
+    Display::draw_log(cyber, "WiFi initialization complete");
 
     g_wifi->setDeviceName(DEVICE_NAME);
 
@@ -167,6 +194,7 @@ void init_app(void)
 
     // Start network daemon after WiFi init
     Log::sys_info(TAG, "Starting daemons...");
+    Display::draw_log(cyber, "Starting daemons...");
 
     Daemon::startNetworkDaemon();
     Daemon::startHeartbeatDaemon();
@@ -182,7 +210,12 @@ void init_app(void)
     GID::gID();
     Daemon::startgIDDaemon();
 
+    Display::draw_log(cyber, "Daemons started. Running unit tests...");
     // Unit Test (run in dedicated task to avoid main-task stack overflow)
+    /**
+     * @brief Unit test that are not nessecary at init time. Unit Test required to run are far higher.
+     * p2p protocol, security, OTA, server communication, etc., mqtt, etc.
+     */
     UnitTestTaskContext testContext = {false, false};
     BaseType_t created = xTaskCreatePinnedToCore(
         runUnitTestsTask,
@@ -196,6 +229,7 @@ void init_app(void)
     if (created != pdPASS)
     {
         Log::sys_error(TAG, "Failed to create unit test task");
+        Display::draw_log(cyber, "Failed to create unit test task - restarting...");
         delay(2000);
         esp_restart();
     }
@@ -208,6 +242,7 @@ void init_app(void)
     if (!testContext.allPassed)
     {
         Log::sys_warning(TAG, "One or more non-critical unit tests failed");
+        Display::draw_log(cyber, "One or more non-critical unit tests failed - check logs");
     }
 
     // Start Health Daemons
@@ -216,6 +251,7 @@ void init_app(void)
     // Init Extensive Platform Cyper PI Lib
 
     // Init done
+    Display::draw_log(cyber, "Initialization complete. Starting main loop...");
     Init::initialized();
 }
 

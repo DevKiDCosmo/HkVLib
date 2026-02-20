@@ -1,4 +1,6 @@
 #include "log.h"
+#include "../display/display.h"
+#include "../config/config.h"
 
 void Log::sys_infoflag(const char *Tag, String msg, bool Flag)
 {
