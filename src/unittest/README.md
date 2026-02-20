@@ -38,6 +38,7 @@ There are two priority levels for unit tests:
 - [ ] **Clock System**: System clock and timer accuracy
 - [ ] **Interrupt Handler**: Critical interrupt registration and handling
 - [ ] **Boot Partition**: Verify boot partition integrity and rollback capability
+- [ ] **Panick System**: This checks if interruptions are possible.
 
 ### PRIO-1 (Feature & Integration Tests)
 - [ ] **WiFi Connectivity**: WiFi initialization, connection, and reconnection
