@@ -1,5 +1,6 @@
 #include "display.h"
 #include "boot_bitmap.h"
+#include "team_bitmap.h"
 
 #include <algorithm>
 
@@ -95,6 +96,18 @@ void Display::draw_boot(CyberPi &cyber)
     draw_text(cyber, 16, 40, "HkVLib", 18, white);
     draw_text(cyber, 16, 68, "Firmware Boot", 12, white);
 
+    cyber.render_lcd();
+}
+
+void Display::draw_team(CyberPi &cyber)
+{
+    if (!g_displayReady)
+    {
+        return;
+    }
+
+    cyber.clean_lcd();
+    draw_bitmap(cyber, 0, 0, team_width, team_height, team_pixels);
     cyber.render_lcd();
 }
 

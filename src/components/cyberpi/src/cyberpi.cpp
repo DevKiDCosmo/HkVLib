@@ -384,6 +384,10 @@ void CyberPi::_on_sound_thread(void *p)
         {
             _audio.render();
         }
+        else
+        {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
     }
 }
 void CyberPi::_on_sensor_thread(void *p)
@@ -421,6 +425,10 @@ void CyberPi::_on_sensor_thread(void *p)
             {
                 _mic_callback(samples, mic_length);
             }
+        }
+        else
+        {
+            vTaskDelay(pdMS_TO_TICKS(1));
         }
     }
 }

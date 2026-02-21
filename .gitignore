@@ -13,3 +13,5 @@ example/src
 server/data/devices.csv
 
 example/*
+*.ignore
+*.ignoreh

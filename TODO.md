@@ -4,7 +4,7 @@ Stand: automatisch aus dem aktuellen Repo-Status abgeleitet.
 
 ## P0 – Build-/Integrationsblocker
 
-- [ ] `main.cpp` Warning/Fix: `create_text(L"...")` bekommt `wchar_t*` statt `const wchar_t*` (aktueller Compiler-Warning in `src/main.cpp`).
+- [x] `main.cpp` Warning/Fix: `create_text(L"...")` bekommt `wchar_t*` statt `const wchar_t*` (aktueller Compiler-Warning in `src/main.cpp`).
 - [ ] Entscheiden, ob BLE/P2P aktiv werden soll: aktuelle Implementierungen liegen nur als `.ignore/.ignoreh` vor und sind nicht im aktiven Build eingebunden.
 
 ## P1 – Netzwerk & Connectivity

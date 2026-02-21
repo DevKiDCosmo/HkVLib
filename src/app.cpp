@@ -22,25 +22,4 @@ void App::update()
     digitalWrite(LED_PIN, !digitalRead(LED_PIN));
 
     // Using Makeblock-Libary for actual hardware interaction (e.g., sensors, actuators) would go here
-
-    if (g_wifi->isConnected())
-    {
-        serialprint("Disconnecting WiFi to test reconnect logic...");
-        g_wifi->disconnect();
-    }
-
-    // Try to change pw and ssid
-    if (g_wifi->isConnected())
-    {
-        // Fake.
-        Init::initialized(); // This will set the lock hash on first run
-        g_ssid = "BACKUP_WLAN_SSID";
-        g_password = "BACKUP_WLAN_PASSWORD";
-        g_wifi->disconnect();
-        delay(1000);
-        if (g_wifi->connect(g_ssid, g_password))
-        {
-            serialprint("WiFi reconnected with backup credentials");
-        }
-    }
 }

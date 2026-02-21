@@ -25,6 +25,7 @@ public:
     ~Display();
 
     static void draw_boot(CyberPi &cyber);
+    static void draw_team(CyberPi &cyber);
     static void draw_log(CyberPi &cyber, const String &message);
     static uint16_t color(CyberPi &cyber, PresetColor preset);
     static void draw_bitmap(CyberPi &cyber, uint8_t x, uint8_t y, uint8_t width, uint8_t height, const uint16_t *pixels);

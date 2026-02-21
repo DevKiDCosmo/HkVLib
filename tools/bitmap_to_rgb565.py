@@ -69,7 +69,9 @@ def read_bmp_rgb(path: Path):
                 g = data[px + 1]
                 r = data[px + 2]
             rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
-            row_pixels.append(rgb565)
+            # Byte-swap for LCD controller (little-endian expectation)
+            rgb565_swapped = ((rgb565 & 0xFF) << 8) | (rgb565 >> 8)
+            row_pixels.append(rgb565_swapped)
         pixels.extend(row_pixels)
 
     return width_abs, height_abs, pixels

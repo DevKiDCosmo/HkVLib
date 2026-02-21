@@ -31,4 +31,6 @@ public:
     static void startgIDDaemon(void);
 
     static void startOnlineLockDaemon(void);
+
+    static void startBluetoothDaemon(void);
 };

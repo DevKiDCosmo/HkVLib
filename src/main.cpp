@@ -151,7 +151,9 @@ void init_app(void)
     Serial.begin(115200);
     Log::sys_info(TAG, "Serial initialized at 115200 baud");
 
+    delay(1000); // Brief delay to ensure Serial is ready
     Display::draw_boot(cyber);
+    delay(2000);
 
     Display::draw_log(cyber, "Initializing WiFi...");
 
@@ -165,6 +167,9 @@ void init_app(void)
     {
         Log::sys_info(TAG, "WiFi connected successfully");
         Log::sys_info(TAG, "IP Address: " + String(g_wifi->getLocalIP().c_str()));
+        Display::draw_log(cyber, "WiFi initialization complete");
+        delay(100);
+        Display::draw_log(cyber, "IP Addr: " + String(g_wifi->getLocalIP().c_str()));
     }
     else
     {
@@ -176,6 +181,9 @@ void init_app(void)
         {
             Log::sys_info(TAG, "Backup WiFi connected successfully");
             Log::sys_info(TAG, "IP Address: " + String(g_wifi->getLocalIP().c_str()));
+            Display::draw_log(cyber, "WiFi initialization complete");
+            delay(100);
+            Display::draw_log(cyber, "IP Addr: " + String(g_wifi->getLocalIP().c_str()));
         }
         else
         {
@@ -185,8 +193,6 @@ void init_app(void)
             g_password = WLAN_PASSWORD;
         }
     }
-
-    Display::draw_log(cyber, "WiFi initialization complete");
 
     g_wifi->setDeviceName(DEVICE_NAME);
 
@@ -209,6 +215,7 @@ void init_app(void)
     // Starting DHCP ID Client Configuration
     GID::gID();
     Daemon::startgIDDaemon();
+    Daemon::startBluetoothDaemon();
 
     Display::draw_log(cyber, "Daemons started. Running unit tests...");
     // Unit Test (run in dedicated task to avoid main-task stack overflow)
@@ -234,10 +241,12 @@ void init_app(void)
         esp_restart();
     }
 
-    while (!testContext.done)
+    while (!testContext.done && optionalTest) // add timeout
     {
         delay(10);
     }
+    if (!optionalTest)
+        Log::sys_warning(TAG, "Skip optional test");
 
     if (!testContext.allPassed)
     {
@@ -248,10 +257,13 @@ void init_app(void)
     // Start Health Daemons
     HealthDaemons::startHealthDaemons();
 
-    // Init Extensive Platform Cyper PI Lib
+    // TODO: Init Extensive Platform Cyper PI Lib
 
     // Init done
     Display::draw_log(cyber, "Initialization complete. Starting main loop...");
+    delay(1000);
+    Display::draw_team(cyber);
+    delay(3000);
     Init::initialized();
 }
 

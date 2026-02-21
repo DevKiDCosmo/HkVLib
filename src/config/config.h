@@ -28,7 +28,7 @@
 // Firmware
 #define BUILD "12203984"
 #define DATE "02/18/2026"
-#define GUID ""
+#define GUID "HEllo"
 #define VERSION "v1.0"
 
 // DEBUG Config
@@ -38,6 +38,10 @@
 #define DEBUG_SERIAL true
 #define DEBUG_WARNING true
 #define DEBUG_VERBOSE true
+
+// UT Config
+#define optionalTest false   // indicate thatr ut doesn't eed to be down
+#define timeOutOptional 5000 // ms
 
 // TEAM Configuration and Name
 #define TEAMID 0
