@@ -150,6 +150,8 @@ void init_app(void)
     // Initialize Serial for reading commands
     Serial.begin(115200);
     Log::sys_info(TAG, "Serial initialized at 115200 baud");
+    // Start serial input daemon for immediate command processing.
+    Daemon::startSerialInputDaemon();
 
     delay(1000); // Brief delay to ensure Serial is ready
     Display::draw_boot(cyber);
@@ -209,9 +211,6 @@ void init_app(void)
     if (ONLINE_LOCK)
         Daemon::startOnlineLockDaemon();
 
-    // Start serial input daemon for immediate command processing.
-    Daemon::startSerialInputDaemon();
-
     // Starting DHCP ID Client Configuration
     GID::gID();
     Daemon::startgIDDaemon();
@@ -246,7 +245,7 @@ void init_app(void)
         delay(10);
     }
     if (!optionalTest)
-        Log::sys_warning(TAG, "Skip optional test");
+        Log::sys_warning(TAG, "Skip optional test. Don't wait");
 
     if (!testContext.allPassed)
     {
