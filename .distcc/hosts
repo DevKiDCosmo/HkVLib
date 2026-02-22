@@ -1,0 +1,7 @@
+# distcc host list used by .distcc/override_compiler.py
+# Format examples:
+# 10.190.0.171/8,lzo,cpp
+# localhost/8,cpp
+
+10.190.0.39/24,lzo,cpp
+localhost/24,cpp

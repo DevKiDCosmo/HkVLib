@@ -364,3 +364,7 @@ Beucase PIO doesn't add the compiler directly, please add them in .zshrc.
 echo 'export PATH=$HOME/.platformio/packages/toolchain-xtensa-esp32/bin:$PATH' >> ~/.zshrc
 source ~/.zshrc
 ```
+
+```bash
+distccd --daemon --listen 0.0.0.0 --allow 192.168.0.0/24 --jobs 10 --enable-tcp-insecure --verbose 
+```
