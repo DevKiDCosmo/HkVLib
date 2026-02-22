@@ -1,2 +1,8 @@
-wlan_ssid: HelloWorld 
-wlan_pass: 12345678
+wlan_ssid: NAMANAMANAMANAN 
+wlan_pass: Namnamnam
+
+server: 10.190.0.131
+port: 8080
+
+# Only for debug
+disable_id: true

@@ -1,15 +1,25 @@
 #include "display.h"
 #include "boot_bitmap.h"
 #include "team_bitmap.h"
+#include "../serial/log.h"
 
 #include <algorithm>
 
-static std::vector<String> logMessages;
+struct LogMessage
+{
+    String text;
+    uint16_t color;
+};
+
+static std::vector<LogMessage> logMessages;
 static bool g_displayReady = false;
+static std::vector<Bitmap *> tempBitmaps; // Store bitmaps until after rendering
 
 namespace
 {
     constexpr uint8_t kLcdSize = 128;
+
+    const char *TAG = "DISPLAY";
 
     std::vector<wchar_t> to_wide(const String &text)
     {
@@ -52,7 +62,17 @@ namespace
         }
 
         cyber.set_bitmap(x, y, textBitmap);
-        destroy_bitmap(textBitmap);
+        // Store bitmap for later cleanup - DON'T destroy before rendering!
+        tempBitmaps.push_back(textBitmap);
+    }
+
+    void cleanup_bitmaps()
+    {
+        for (Bitmap *bmp : tempBitmaps)
+        {
+            destroy_bitmap(bmp);
+        }
+        tempBitmaps.clear();
     }
 }
 
@@ -97,6 +117,7 @@ void Display::draw_boot(CyberPi &cyber)
     draw_text(cyber, 16, 68, "Firmware Boot", 12, white);
 
     cyber.render_lcd();
+    cleanup_bitmaps();
 }
 
 void Display::draw_team(CyberPi &cyber)
@@ -106,22 +127,27 @@ void Display::draw_team(CyberPi &cyber)
         return;
     }
 
+    cleanup_bitmaps(); // Clean up any previous bitmaps
     cyber.clean_lcd();
     draw_bitmap(cyber, 0, 0, team_width, team_height, team_pixels);
     cyber.render_lcd();
+    delay(25); // Wait for LCD rendering throttle
 }
 
-void Display::draw_log(CyberPi &cyber, const String &message)
+void Display::draw_log(CyberPi &cyber, const String &message, PresetColor preset)
 {
+    Log::sys_infoflag(TAG, "draw_log called: " + message, DEBUG_FLAG_EXTENSIVE);
+    Log::sys_info(TAG, "cyber address in draw_log: " + String((unsigned long)&cyber, HEX));
     if (!g_displayReady)
     {
+        Log::sys_warning(TAG, "Display not ready in draw_log!");
         return;
     }
 
     constexpr uint8_t fontSize = 12;
     constexpr size_t maxCharPerLine = 20;
     constexpr size_t maxLines = 7;
-    const uint16_t textColor = color(cyber, PresetColor::White);
+    const uint16_t textColor = color(cyber, preset);
 
     std::vector<String> wrapped;
     wrapped.reserve((message.length() / maxCharPerLine) + 2);
@@ -163,7 +189,7 @@ void Display::draw_log(CyberPi &cyber, const String &message)
 
     for (const String &line : wrapped)
     {
-        logMessages.push_back(line);
+        logMessages.push_back({line, textColor});
     }
 
     if (logMessages.size() > maxLines)
@@ -171,13 +197,21 @@ void Display::draw_log(CyberPi &cyber, const String &message)
         logMessages.erase(logMessages.begin(), logMessages.begin() + (logMessages.size() - maxLines));
     }
 
+    cleanup_bitmaps(); // Clean up any previous bitmaps
     cyber.clean_lcd();
+    Log::sys_infoflag(TAG, "LCD cleaned, drawing " + String(logMessages.size()) + " messages", DEBUG_FLAG_EXTENSIVE);
     for (size_t lineIndex = 0; lineIndex < logMessages.size(); ++lineIndex)
     {
         const uint8_t y = static_cast<uint8_t>(4 + lineIndex * (fontSize + 4));
-        draw_text(cyber, 2, y, logMessages[lineIndex], fontSize, textColor);
+        Log::sys_infoflag(TAG, "Drawing line " + String(lineIndex) + ": " + logMessages[lineIndex].text, DEBUG_FLAG_EXTENSIVE);
+        draw_text(cyber, 2, y, logMessages[lineIndex].text, fontSize, logMessages[lineIndex].color);
+        Log::sys_infoflag(TAG, "Line " + String(lineIndex) + " drawn successfully", DEBUG_FLAG_EXTENSIVE);
     }
+    Log::sys_infoflag(TAG, "About to call cyber.render_lcd()...", DEBUG_FLAG_EXTENSIVE);
     cyber.render_lcd();
+    delay(25); // Wait for LCD rendering throttle (20ms minimum)
+    Log::sys_infoflag(TAG, "LCD rendered successfully!", DEBUG_FLAG_EXTENSIVE);
+    cleanup_bitmaps(); // NOW destroy the bitmaps after rendering
 }
 
 uint16_t Display::color(CyberPi &cyber, PresetColor preset)
@@ -248,9 +282,23 @@ void Display::render()
 {
 }
 
-void Display::clear()
+void Display::clear(CyberPi &cyber)
 {
+    Log::sys_infoflag(TAG, "Display::clear called", DEBUG_FLAG_EXTENSIVE);
     logMessages.clear();
+    cleanup_bitmaps(); // Clean up any bitmaps
+    // Reset to a blank screen
+    if (g_displayReady)
+    {
+        cyber.clean_lcd();
+        cyber.render_lcd();
+        delay(25); // Wait for LCD rendering throttle
+        Log::sys_infoflag(TAG, "Display cleared and rendered", DEBUG_FLAG_EXTENSIVE);
+    }
+    else
+    {
+        Log::sys_warning(TAG, "Display not ready in clear!");
+    }
 }
 
 void Display::update()

@@ -203,6 +203,11 @@ void CyberPi::read_char(Bitmap *bitmap, int x, int y, float w, float h, uint8_t 
 }
 void CyberPi::clean_lcd()
 {
+    if (_framebuffer == nullptr)
+    {
+        Serial.println("ERROR in clean_lcd: _framebuffer is NULL!");
+        return;
+    }
     memset(_framebuffer, 0x0, 128 * 128 * 2);
 }
 
@@ -216,7 +221,12 @@ void CyberPi::set_lcd_pixel(uint8_t x, uint8_t y, uint16_t color)
 
 void CyberPi::set_bitmap(uint8_t x, uint8_t y, Bitmap *bitmap)
 {
-    Serial.printf("%d,%d\n", bitmap->width, bitmap->height);
+    Serial.printf("set_bitmap: %d,%d, _framebuffer=%p\n", bitmap->width, bitmap->height, _framebuffer);
+    if (_framebuffer == nullptr)
+    {
+        Serial.println("ERROR: _framebuffer is NULL!");
+        return;
+    }
     for (int i = 0; i < bitmap->height; i++)
     {
         for (int j = 0; j < bitmap->width; j++)
@@ -232,6 +242,15 @@ uint16_t CyberPi::color24_to_16(uint32_t rgb)
 
 uint16_t CyberPi::swap_color(uint16_t color)
 {
+    if (_framebuffer == nullptr)
+    {
+        Serial.println("ERROR in swap_color: _framebuffer is NULL!");
+        return 0;
+    }
+    if (color == 0)
+    {
+        return 0;
+    }
     return ((color & 0xff) << 8) | (color >> 8);
 }
 void CyberPi::render_lcd()

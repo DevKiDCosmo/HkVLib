@@ -74,7 +74,6 @@ namespace
         ok = runTimedUnitTest("Storage Unit test", &UnitTest::runStorageTest, false) && ok;
         ok = runTimedUnitTest("PSRAM Unit test", &UnitTest::runPsramTest, false) && ok;
         ok = runTimedUnitTest("Math Unit test", &UnitTest::runMathTest, false) && ok;
-        ok = runTimedUnitTest("Init Unit test", &UnitTest::initUnitTests, true) && ok;
 
         context->allPassed = ok;
         context->done = true;
@@ -135,6 +134,7 @@ void init_app(void)
 
     // Init Display Component
     cyber.begin();
+    Log::sys_info(TAG, "CyberPi cyber address in main: " + String((unsigned long)&cyber, HEX));
     Display::initialize();
     int font_size = 16;
     const wchar_t *titleText = L"HkVLib Firmware";
@@ -146,6 +146,25 @@ void init_app(void)
     // Unit tests for: RTOS, WiFi, RAM, Security
 
     // Init Configuration
+    if (!Configuration::loadConfigFromFile("/config/config.yml"))
+        Log::sys_error(TAG, "Failed to load configuration from file - using defaults");
+    else
+    {
+        Log::sys_info(TAG, "Configuration loaded from file successfully");
+        Log::sys_info(TAG, "Config entries loaded: " + String(Configuration::getConfigEntryCount()));
+
+        delay(10);
+
+        for (const auto &entry : Configuration::getConfigEntries())
+        {
+            Log::sys_info(TAG, "Config entry: " + entry.stmt + " = " + entry.expr);
+            delay(10);
+        }
+
+        const String &disableId = Configuration::getExprForStmt("disable_id");
+        if (!disableId.isEmpty())
+            Log::sys_info(TAG, "Config disable_id=" + disableId);
+    }
 
     // Initialize Serial for reading commands
     Serial.begin(115200);
@@ -154,6 +173,7 @@ void init_app(void)
     Daemon::startSerialInputDaemon();
 
     delay(1000); // Brief delay to ensure Serial is ready
+
     Display::draw_boot(cyber);
     delay(2000);
 
@@ -162,8 +182,12 @@ void init_app(void)
     // Initialize WiFi using Arduino library
     Log::sys_info(TAG, "Initializing WiFi...");
     g_wifi = new WiFiConnect();
-    g_ssid = WLAN_SSID;
-    g_password = WLAN_PASSWORD;
+    if (g_ssid.isEmpty() || g_password.isEmpty())
+    {
+        Log::sys_warning(TAG, "WiFi credentials not set in config - using defaults");
+        g_ssid = WLAN_SSID;
+        g_password = WLAN_PASSWORD;
+    }
 
     if (g_wifi->connect(g_ssid, g_password))
     {
@@ -189,8 +213,8 @@ void init_app(void)
         }
         else
         {
-            Log::sys_error(TAG, "WiFi connection failed! Daemon will retry... with old credentials");
-            Display::draw_log(cyber, "WiFi connection failed! Daemon will retry... with old credentials");
+            Log::sys_error(TAG, "WiFi connection failed! Daemon will retry... with default credentials");
+            Display::draw_log(cyber, "WiFi connection failed! Daemon will retry... with default credentials");
             g_ssid = WLAN_SSID;
             g_password = WLAN_PASSWORD;
         }
@@ -235,7 +259,6 @@ void init_app(void)
     if (created != pdPASS)
     {
         Log::sys_error(TAG, "Failed to create unit test task");
-        Display::draw_log(cyber, "Failed to create unit test task - restarting...");
         delay(2000);
         esp_restart();
     }
@@ -250,7 +273,6 @@ void init_app(void)
     if (!testContext.allPassed)
     {
         Log::sys_warning(TAG, "One or more non-critical unit tests failed");
-        Display::draw_log(cyber, "One or more non-critical unit tests failed - check logs");
     }
 
     // Start Health Daemons
@@ -263,14 +285,25 @@ void init_app(void)
     delay(1000);
     Display::draw_team(cyber);
     delay(3000);
+
+    // Do Init Unit Test.
+    if (!UnitTest::initUnitTests())
+    {
+        Log::sys_error(TAG, "Critical Init Unit Test failed - restarting...");
+        delay(2000);
+        esp_restart();
+    }
+
     Init::initialized();
 }
 
 extern "C" void app_main(void)
 {
     init_app();
-    App::init();
     OnlineLock::init();
+    Log::sys_info(TAG, "OnlineLock initialized, isLocked=" + String(OnlineLock::isLocked()));
+    App::init();
+    Log::sys_info(TAG, "App::init() completed - display should be cleared now");
 
     Log::sys_info(TAG, "Main loop starting on Core " + String(xPortGetCoreID()));
     while (true)
@@ -302,17 +335,27 @@ extern "C" void app_main(void)
         {
             Log::sys_warning(TAG, "Waiting for online lock to be released...");
             delay(1000); // Brief pause to avoid busy loop
-            return;
+            continue;    // FIXED: was return - which would exit app_main entirely!
         }
 
+        const String &disableIdValue = Configuration::getExprForStmt("disable_id");
+        const bool disableId = disableIdValue.equalsIgnoreCase("true") || disableIdValue == "1";
         if (DEVICE_ID == -1)
         {
-            Log::sys_error(TAG, "Device ID not yet assigned!");
-            GID::gID(); // Attempt to request ID immediately instead of waiting for next heartbeat
-            delay(5000);
-            continue;
+            if (disableId)
+            {
+                Log::sys_info(TAG, "Device ID disabled via config - continuing anyway");
+            }
+            else
+            {
+                Log::sys_error(TAG, "Device ID not assigned - waiting for assignment...");
+                delay(5000);
+                continue;
+            }
         }
 
+        Log::sys_info(TAG, "Calling App::update() iteration...");
         App::update();
+        Log::sys_info(TAG, "App::update() completed");
     }
 }

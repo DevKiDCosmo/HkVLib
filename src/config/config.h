@@ -3,6 +3,7 @@
 #define CONFIG_H
 
 #include <Arduino.h>
+#include <vector>
 #include "../components/cyberpi/src/cyberpi.h"
 
 // WLAN configuration
@@ -64,7 +65,17 @@ extern CyberPi cyber;
 class Configuration
 {
 public:
+    struct ConfigEntry
+    {
+        String stmt;
+        String expr;
+    };
+
     static bool loadConfigFromFile(const char *filePath);
+    static const std::vector<ConfigEntry> &getConfigEntries();
+    static int getConfigEntryCount();
+    static const String &getExprForStmt(const char *stmt);
+    static bool hasStmt(const char *stmt);
 };
 
 #endif // CONFIG_H
