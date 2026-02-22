@@ -61,4 +61,10 @@ extern String g_password;
 
 extern CyberPi cyber;
 
+class Configuration
+{
+public:
+    static bool loadConfigFromFile(const char *filePath);
+};
+
 #endif // CONFIG_H

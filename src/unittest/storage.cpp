@@ -19,7 +19,7 @@ namespace UnitTest
     namespace
     {
         constexpr const char *kTag = "STORTEST";
-        constexpr const char *kMountCandidates[] = {"/spiffs", "/littlefs", "/data", "/fatfs", "/storage"};
+        constexpr const char *kMountCandidates[] = {"/spiffs", "/storage", "/config", "/littlefs", "/data", "/fatfs"};
 
         constexpr std::size_t kInitialSize = 256u * 1024u;
         constexpr std::size_t kOverwriteOffset = 64u * 1024u;
@@ -64,31 +64,63 @@ namespace UnitTest
             return nullptr;
         }
 
-        bool tryMountSpiffs(const char *basePath, const char *&mountedLabel)
+        bool tryMountStoragePartition(const char *basePath, const char *partitionLabel, const char *&mountedLabel)
         {
             esp_vfs_spiffs_conf_t conf = {};
             conf.base_path = basePath;
-            conf.partition_label = "storage";
+            conf.partition_label = partitionLabel;
+            conf.max_files = 4;
+            conf.format_if_mount_failed = false;
+
+            esp_err_t err = esp_vfs_spiffs_register(&conf);
+            if (err == ESP_OK)
+            {
+                mountedLabel = partitionLabel;
+                Log::sys_info(kTag, "Mounted partition '" + String(partitionLabel) + "' at " + String(basePath));
+                return true;
+            }
+
+            Log::sys_warning(kTag, "Failed to mount partition '" + String(partitionLabel) + "': " + String(esp_err_to_name(err)));
+            return false;
+        }
+
+        bool tryMountSpiffs(const char *basePath, const char *&mountedLabel)
+        {
+            // Try mounting with specific storage partition first
+            if (tryMountStoragePartition(basePath, "storage", mountedLabel))
+            {
+                return true;
+            }
+
+            // Try mounting with unspecified partition (any SPIFFS partition)
+            esp_vfs_spiffs_conf_t conf = {};
+            conf.base_path = basePath;
+            conf.partition_label = nullptr;
             conf.max_files = 4;
             conf.format_if_mount_failed = true;
 
             esp_err_t err = esp_vfs_spiffs_register(&conf);
             if (err == ESP_OK)
             {
-                mountedLabel = "storage";
-                return true;
-            }
-
-            conf.partition_label = nullptr;
-            err = esp_vfs_spiffs_register(&conf);
-            if (err == ESP_OK)
-            {
                 mountedLabel = nullptr;
+                Log::sys_info(kTag, "Mounted generic SPIFFS partition at " + String(basePath));
                 return true;
             }
 
             Log::sys_error(kTag, "SPIFFS mount failed: " + String(esp_err_to_name(err)) + " (" + String(static_cast<int>(err)) + ")");
             return false;
+        }
+
+        void cleanupMount(const char *basePath, const char *mountedLabel)
+        {
+            if (!mountedLabel)
+            {
+                esp_vfs_spiffs_unregister(basePath);
+            }
+            else
+            {
+                esp_vfs_spiffs_unregister(mountedLabel);
+            }
         }
 
         bool writeRange(FILE *file, std::size_t fileOffset, std::size_t length, std::uint8_t (*pat)(std::size_t))
@@ -206,17 +238,23 @@ namespace UnitTest
         bool mountedByTest = false;
         const char *spiffsLabel = nullptr;
         const char *mount = detectMountPath();
+
         if (!mount)
         {
-            if (!tryMountSpiffs("/spiffs", spiffsLabel))
+            Log::sys_info(kTag, "No mounted storage path found. Attempting to mount storage partition...");
+            if (!tryMountSpiffs("/storage", spiffsLabel))
             {
-                Log::sys_error(kTag, "No mounted storage path found (/spiffs,/littlefs,/data,/fatfs,/storage)");
+                Log::sys_error(kTag, "Could not mount storage partition");
                 return false;
             }
 
-            mount = "/spiffs";
+            mount = "/storage";
             mountedByTest = true;
-            Log::sys_info(kTag, "Mounted SPIFFS for test at /spiffs");
+            Log::sys_info(kTag, "Mounted storage partition for test at /storage");
+        }
+        else
+        {
+            Log::sys_info(kTag, "Using existing storage mount at " + String(mount));
         }
 
         const String basePath = String(mount);
@@ -232,7 +270,7 @@ namespace UnitTest
             Log::sys_error(kTag, "fopen create failed: " + String(errno));
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -243,7 +281,7 @@ namespace UnitTest
             remove(testPath.c_str());
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -254,7 +292,7 @@ namespace UnitTest
             remove(testPath.c_str());
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -265,7 +303,7 @@ namespace UnitTest
             remove(testPath.c_str());
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -279,7 +317,7 @@ namespace UnitTest
             remove(testPath.c_str());
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -292,7 +330,7 @@ namespace UnitTest
             remove(testPath.c_str());
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -303,7 +341,7 @@ namespace UnitTest
             remove(testPath.c_str());
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -315,7 +353,7 @@ namespace UnitTest
             remove(renamedPath.c_str());
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -325,7 +363,7 @@ namespace UnitTest
             Log::sys_error(kTag, "remove failed: " + String(errno));
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
@@ -335,14 +373,22 @@ namespace UnitTest
             Log::sys_error(kTag, "delete verification failed");
             if (mountedByTest)
             {
-                esp_vfs_spiffs_unregister(spiffsLabel);
+                cleanupMount(basePath.c_str(), spiffsLabel);
             }
             return false;
         }
 
         if (mountedByTest)
         {
-            esp_vfs_spiffs_unregister(spiffsLabel);
+            if (spiffsLabel)
+            {
+                esp_vfs_spiffs_unregister(spiffsLabel);
+            }
+            else
+            {
+                esp_vfs_spiffs_unregister(basePath.c_str());
+            }
+            Log::sys_info(kTag, "Storage partition unmounted");
         }
 
         Log::sys_info(kTag, "Storage integrity test successful on " + basePath + ", tested: " + String(totalSize) + " bytes");
