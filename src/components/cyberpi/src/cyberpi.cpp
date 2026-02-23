@@ -48,11 +48,14 @@ void CyberPi::begin()
 }
 void CyberPi::_on_lcd_thread(void *p)
 {
+    Serial.println("[LCD_THREAD] Started on Core " + String(xPortGetCoreID()));
     while (true)
     {
         if (xSemaphoreTake(_render_ready, 25) == pdTRUE)
         {
+            Serial.println("[LCD_THREAD] Rendering frame...");
             lcd_draw(_framebuffer, 128, 128);
+            Serial.println("[LCD_THREAD] Frame rendered.");
         }
     }
 }
@@ -258,7 +261,12 @@ void CyberPi::render_lcd()
     if (millis() - lastTime > 20)
     {
         lastTime = millis();
+        Serial.println("[RENDER_LCD] Semaphore given at " + String(millis()) + "ms (Core " + String(xPortGetCoreID()) + ")");
         xSemaphoreGive(_render_ready);
+    }
+    else
+    {
+        Serial.println("[RENDER_LCD] Throttled (diff=" + String(millis() - lastTime) + "ms)");
     }
 }
 

@@ -116,7 +116,7 @@ static void setup_serial(void)
     esp_log_level_set(NET_TAG, ESP_LOG_INFO);
 }
 
-void init_app(void)
+void booting(void)
 {
     // ESP-IDF native logging (no Arduino dependency)
     setup_serial();
@@ -299,11 +299,14 @@ void init_app(void)
 
 extern "C" void app_main(void)
 {
-    init_app();
+    booting();
     OnlineLock::init();
     Log::sys_info(TAG, "OnlineLock initialized, isLocked=" + String(OnlineLock::isLocked()));
     App::init();
     Log::sys_info(TAG, "App::init() completed - display should be cleared now");
+
+    Display::clear(cyber); // Ensure any init bitmaps are freed to prevent memory issues in main loop
+    Display::draw_log(cyber, "Entering main loop...");
 
     Log::sys_info(TAG, "Main loop starting on Core " + String(xPortGetCoreID()));
     while (true)

@@ -54,7 +54,7 @@ void Daemon::startSerialInputDaemon(void)
         NULL,
         1,
         NULL,
-        1);
+        0); // Priority 1 on Core 0. Higher priority than main loop to ensure responsiveness.
 
     Log::sys_info(PRIV_DAEMON_TAG, "Serial input daemon started");
 }
