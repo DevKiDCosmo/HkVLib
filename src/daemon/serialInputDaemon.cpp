@@ -3,6 +3,7 @@
 #include "esp_log.h"
 #include "../connectivity/wifi/wifi.h"
 #include "../serial/log.h"
+#include "../serial/commands/debug.h"
 
 static const char *PRIV_DAEMON_TAG = "SERIAL";
 
@@ -35,6 +36,20 @@ void serialInputDaemonTask(void *pvParameters)
             {
                 Log::sys_info(PRIV_DAEMON_TAG, "Rebooting system...");
                 esp_restart();
+            }
+            else if (input.equalsIgnoreCase("rtos tasks") || input.equalsIgnoreCase("daemon status"))
+            {
+                SerialDebugCommands::RTOSBgTask();
+            }
+            else if (input.equalsIgnoreCase("display ping") || input.equalsIgnoreCase("display test"))
+            {
+                SerialDebugCommands::DisplayPing();
+            }
+            else if (input.startsWith("daemon notify"))
+            {
+                String taskName = input.substring(String("daemon notify").length());
+                taskName.trim();
+                SerialDebugCommands::DaemonNotify(taskName);
             }
         }
 

@@ -12,7 +12,7 @@ const char *TAG = "APP";
 
 void serialprint(const String message)
 {
-    ESP_LOGI(TAG, "%s", message.c_str());
+    Log::sys_infoflag(TAG, message, DEBUG_SERIAL_APP);
 }
 
 void display_print(const String &message, DisplayPrintColor color)

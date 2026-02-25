@@ -33,7 +33,9 @@
 #define VERSION "v1.0"
 
 // DEBUG Config
-#define DEBUG_FLAG_EXTENSIVE true
+#define DEBUG_FLAG_EXTENSIVE false
+#define DEBUG_SERIAL_APP false
+#define DEBUG_DISPLAY false
 #define DEBUG_ERROR true
 #define DEBUG_NORMAL true
 #define DEBUG_SERIAL true
