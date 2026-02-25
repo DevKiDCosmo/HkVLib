@@ -8,7 +8,7 @@
     "ghcr.io/devcontainers/features/node:1": {},
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers-extra/features/cmake:1": {},
-    "ghcr.io/devcontainer-config/features/dot-config:3": {}
+    "ghcr.io/devcontainer-config/features/dot-config:4": {}
   },
 
   "postCreateCommand": "python -m pip install --user --upgrade pip pipx && pipx ensurepath && pipx install platformio"
