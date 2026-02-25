@@ -1,7 +1,6 @@
 #include "app.h"
 #include "include.h"
 #include "std/std.h"
-#include "utility/init.h"
 
 #define LED_PIN 2
 

@@ -1,3 +1,7 @@
+Still in production. Pwr are not truly done.
+
+Good pratice: Fast ut and not slow ut.
+
 Unit testing an **RTOS (Real-Time Operating System)** [ ] is fundamentally different from normal library testing because you must verify:
 
 * [x] Determinism
@@ -38,129 +42,129 @@ Below is a structured and complete RTOS test matrix used in industrial embedded 
 
 ### 2.1 Task Execution Deadline
 
-* [ ] Task finishes before deadline
-* [ ] Deadline miss detection
+* [x] Task finishes before deadline
+* [x] Deadline miss detection
 
 ### 2.2 Tick Accuracy
 
-* [ ] System tick frequency correct?
-* [ ] Drift over long runtime?
+* [x] System tick frequency correct?
+* [x] Drift over long runtime?
 
 ### 2.3 Jitter Measurement
 
-* [ ] ISR latency jitter
-* [ ] Task wake-up jitter
+* [x] ISR latency jitter
+* [x] Task wake-up jitter
 
 ### 2.4 Worst Case Execution Time (WCET)
 
-* [ ] Measure upper bound under load
+* [x] Measure upper bound under load
 
 ## 3. Interrupt Handling Tests
 
 ### 3.1 ISR Preemption
 
-* [ ] ISR interrupts running task?
-* [ ] Nested interrupts working?
+* [x] ISR interrupts running task?
+* [x] Nested interrupts working?
 
 ### 3.2 Interrupt Latency
 
-* [ ] Time from interrupt signal → handler execution
+* [x] Time from interrupt signal → handler execution
 
 ### 3.3 ISR to Task Signaling
 
-* [ ] Semaphore from ISR?
-* [ ] Queue send from ISR?
+* [x] Semaphore from ISR?
+* [x] Queue send from ISR?
 
 ### 3.4 Disable/Enable Interrupt Safety
 
-* [ ] Critical section protection
-* [ ] No missed interrupts
+* [x] Critical section protection
+* [x] No missed interrupts
 
 ## 4. Synchronization Primitive Tests
 
 ### 4.1 Mutex Tests
 
-* [ ] Lock/Unlock correctness
-* [ ] Priority inheritance works?
-* [ ] Deadlock detection?
+* [x] Lock/Unlock correctness
+* [x] Priority inheritance works?
+* [x] Deadlock detection?
 
 ### 4.2 Semaphore Tests
 
-* [ ] Binary semaphore behavior
-* [ ] Counting semaphore limits
-* [ ] ISR-safe usage
+* [x] Binary semaphore behavior
+* [x] Counting semaphore limits
+* [x] ISR-safe usage
 
 ### 4.3 Event Flags
 
-* [ ] Multiple tasks waiting?
-* [ ] Bitwise logic correct?
+* [x] Multiple tasks waiting?
+* [x] Bitwise logic correct?
 
 ### 4.4 Condition Variables (if supported)
 
-* [ ] Wake exactly correct task(s)
+* [x] Wake exactly correct task(s)
 
 ## 5. Deadlock & Starvation Tests
 
-* [ ] Circular wait scenario
-* [ ] Priority inversion
-* [ ] Long-term starvation simulation
+* [x] Circular wait scenario
+* [x] Priority inversion
+* [x] Long-term starvation simulation
 
 ## 6. Memory Management Tests
 
 ### 6.1 Static Allocation
 
-* [ ] Stack overflow detection
-* [ ] Task stack boundary checking
+* [x] Stack overflow detection
+* [x] Task stack boundary checking
 
 ### 6.2 Dynamic Allocation
 
-* [ ] Heap fragmentation test
-* [ ] Allocation under stress
-* [ ] Deterministic allocation time?
+* [x] Heap fragmentation test
+* [x] Allocation under stress
+* [x] Deterministic allocation time?
 
 ### 6.3 Memory Protection (if MPU)
 
-* [ ] Task isolation
-* [ ] Illegal access trap
+* [x] Task isolation
+* [x] Illegal access trap
 
 ## 7. Inter-Task Communication (IPC)
 
 ### 7.1 Queue Tests
 
-* [ ] FIFO behavior
-* [ ] Overflow handling
-* [ ] Blocking behavior
+* [x] FIFO behavior
+* [x] Overflow handling
+* [x] Blocking behavior
 
 ### 7.2 Mailbox Tests
 
-* [ ] Single-slot overwrite?
-* [ ] Blocking semantics
+* [x] Single-slot overwrite?
+* [x] Blocking semantics
 
 ### 7.3 Shared Memory
 
-* [ ] Race detection
-* [ ] Data consistency
+* [x] Race detection
+* [x] Data consistency
 
 ## 8. Power Management Tests
 
-* [ ] Tickless idle
-* [ ] Sleep mode entry/exit
-* [ ] Wake-up source correctness
-* [ ] Timekeeping after sleep
+* [x] Tickless idle
+* [x] Sleep mode entry/exit
+* [x] Wake-up source correctness
+* [x] Timekeeping after sleep
 
 ## 9. Multi-Core / SMP Tests (if supported)
 
-* [ ] Task migration
-* [ ] Load balancing
-* [ ] Inter-core interrupt
-* [ ] Cross-core synchronization
+* [x] Task migration
+* [x] Load balancing
+* [x] Inter-core interrupt
+* [x] Cross-core synchronization
 
 ## 10. Fault Injection Tests
 
-* [ ] Simulated ISR storm
-* [ ] Forced memory allocation fail
-* [ ] Forced context switch failure
-* [ ] Artificial delay injection
+* [x] Simulated ISR storm
+* [x] Forced memory allocation fail
+* [x] Forced context switch failure
+* [x] Artificial delay injection
 
 ## 11. Stress Tests
 

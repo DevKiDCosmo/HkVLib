@@ -45,6 +45,7 @@
 // UT Config
 #define optionalTest false   // indicate thatr ut doesn't eed to be down
 #define timeOutOptional 5000 // ms
+#define CORRUPT_TEST false   // inject controlled pre-unit-test corruption to validate UT failure paths
 
 // TEAM Configuration and Name
 #define TEAMID 0

@@ -1,9 +1,17 @@
 #include "./RTOS.h"
 #include "./concurrency.h"
+#include "./deadlock_starvation/deadlock_starvation.h"
 #include "./determinism.h"
+#include "./fault_injection/fault_injection.h"
+#include "./ipc/ipc.h"
+#include "./interrupts/interrupts.h"
 #include "./interrupt_behavior.h"
+#include "./memory_management/memory_management.h"
 #include "./memory_safety.h"
+#include "./power_management/power_management.h"
 #include "./scheduler/scheduler.h"
+#include "./smp/smp.h"
+#include "./synchronization/synchronization.h"
 #include "./timing.h"
 
 #include "freertos/FreeRTOS.h"
@@ -56,6 +64,14 @@ namespace UnitTest
         ok = runRtosSchedulerTest() && ok;
         ok = runRtosDeterminismTest() && ok;
         ok = runRtosTimingTest() && ok;
+        ok = runRtosInterruptSuite() && ok;
+        ok = runRtosSynchronizationSuite() && ok;
+        ok = runRtosDeadlockStarvationSuite() && ok;
+        ok = runRtosMemoryManagementSuite() && ok;
+        ok = runRtosIpcSuite() && ok;
+        ok = runRtosPowerManagementSuite() && ok;
+        ok = runRtosSmpSuite() && ok;
+        ok = runRtosFaultInjectionSuite() && ok;
         ok = runRtosConcurrencyTest() && ok;
         ok = runRtosInterruptBehaviorTest() && ok;
         ok = runRtosMemorySafetyTest() && ok;

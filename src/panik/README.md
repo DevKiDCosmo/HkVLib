@@ -1,3 +1,5 @@
+Add failure/panic asap
+
 # Interrupt + Panic + Critical Scope + Freeze System
 ## Enhanced Locking and Runtime Control Architecture for RTOS Daemons
 *(Architecture Draft – Unified Document)*

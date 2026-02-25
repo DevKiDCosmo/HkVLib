@@ -21,6 +21,7 @@
 #include "unittest/psram.h"
 #include "unittest/components/RTOS/RTOS.h"
 #include "unittest/storage.h"
+#include "unittest/corrupt/corrupt.h"
 #include "utility/init.h"
 #include "unittest/initut.h"
 
@@ -152,6 +153,9 @@ void booting(void)
 
     // Init Unit Test required for init phase (critical tests that must pass for safe operation, otherwise restart)
     // Unit tests for: RTOS, RAM. Needed: WiFi, Bluetooth, peripheral tests, etc. also Security and Data integrity tests.
+#if CORRUPT_TEST
+    UnitTest::Corrupt::applyBeforeUnitTests();
+#endif
     Display::draw_log(cyber, "Running required unit tests...");
     if (!runRequiredUnitTests())
     {
@@ -311,6 +315,10 @@ void booting(void)
     {
         Log::sys_warning(TAG, "One or more non-critical unit tests failed");
     }
+
+#if CORRUPT_TEST
+    UnitTest::Corrupt::cleanupAfterUnitTests();
+#endif
 
     // Start Health Daemons
     HealthDaemons::startHealthDaemons();
