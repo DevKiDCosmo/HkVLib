@@ -272,6 +272,8 @@ void booting(void)
         &unitTestTaskHandle,
         xPortGetCoreID());
 
+    Display::draw_log(cyber, "Running optional unit tests...");
+
     if (created != pdPASS)
     {
         Log::sys_error(TAG, "Failed to create unit test task");
@@ -284,6 +286,7 @@ void booting(void)
         Log::sys_warning(TAG, "Skip optional test. Stopping unit test task to free resources");
         if (unitTestTaskHandle != nullptr)
         {
+            Display::draw_log(cyber, "Skipping optional unit tests...");
             vTaskDelete(unitTestTaskHandle);
             unitTestTaskHandle = nullptr;
         }

@@ -48,14 +48,14 @@ void CyberPi::begin()
 }
 void CyberPi::_on_lcd_thread(void *p)
 {
-    Serial.println("[LCD_THREAD] Started on Core " + String(xPortGetCoreID()));
     while (true)
     {
         if (xSemaphoreTake(_render_ready, 25) == pdTRUE)
         {
-            Serial.println("[LCD_THREAD] Rendering frame...");
-            lcd_draw(_framebuffer, 128, 128);
-            Serial.println("[LCD_THREAD] Frame rendered.");
+            if (_framebuffer != nullptr)
+            {
+                lcd_draw(_framebuffer, 128, 128);
+            }
         }
     }
 }
@@ -224,7 +224,6 @@ void CyberPi::set_lcd_pixel(uint8_t x, uint8_t y, uint16_t color)
 
 void CyberPi::set_bitmap(uint8_t x, uint8_t y, Bitmap *bitmap)
 {
-    Serial.printf("set_bitmap: %d,%d, _framebuffer=%p\n", bitmap->width, bitmap->height, _framebuffer);
     if (_framebuffer == nullptr)
     {
         Serial.println("ERROR: _framebuffer is NULL!");

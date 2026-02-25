@@ -1,4 +1,10 @@
 #include "./RTOS.h"
+#include "./concurrency.h"
+#include "./determinism.h"
+#include "./interrupt_behavior.h"
+#include "./memory_safety.h"
+#include "./scheduler/scheduler.h"
+#include "./timing.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -43,6 +49,20 @@ namespace UnitTest
         if (tasksAfter == 0u)
         {
             Log::sys_error(kTag, "No RTOS tasks reported after scheduler tick");
+            return false;
+        }
+
+        bool ok = true;
+        ok = runRtosSchedulerTest() && ok;
+        ok = runRtosDeterminismTest() && ok;
+        ok = runRtosTimingTest() && ok;
+        ok = runRtosConcurrencyTest() && ok;
+        ok = runRtosInterruptBehaviorTest() && ok;
+        ok = runRtosMemorySafetyTest() && ok;
+
+        if (!ok)
+        {
+            Log::sys_error(kTag, "One or more RTOS component tests failed");
             return false;
         }
 

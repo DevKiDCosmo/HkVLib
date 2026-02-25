@@ -1,10 +1,10 @@
 Unit testing an **RTOS (Real-Time Operating System)** [ ] is fundamentally different from normal library testing because you must verify:
 
-* [ ] Determinism
-* [ ] Timing guarantees
-* [ ] Concurrency correctness
-* [ ] Interrupt behavior
-* [ ] Memory safety under real-time constraints
+* [x] Determinism
+* [x] Timing guarantees
+* [x] Concurrency correctness
+* [x] Interrupt behavior
+* [x] Memory safety under real-time constraints
 
 Below is a structured and complete RTOS test matrix used in industrial embedded systems.
 
@@ -12,27 +12,27 @@ Below is a structured and complete RTOS test matrix used in industrial embedded 
 
 ### 1.1 Priority Scheduling Test
 
-* [ ] Higher priority task always preempts lower priority
-* [ ] Equal priority → round robin?
-* [ ] Starvation detection
+* [x] Higher priority task always preempts lower priority
+* [x] Equal priority → round robin?
+* [x] Starvation detection
 
 ### 1.2 Preemption Test
 
-* [ ] Task A running
-* [ ] Higher priority task B becomes ready
-* [ ] Immediate context switch?
+* [x] Task A running
+* [x] Higher priority task B becomes ready
+* [x] Immediate context switch?
 
 ### 1.3 Time Slice / Round Robin
 
-* [ ] Time quantum respected?
-* [ ] Context switch occurs exactly after tick?
+* [x] Time quantum respected?
+* [x] Context switch occurs exactly after tick?
 
 ### 1.4 Context Switch Integrity
 
-* [ ] Registers preserved?
-* [ ] Stack pointer correct?
-* [ ] FPU state saved/restored?
-* [ ] No corruption after 10k switches
+* [x] Registers preserved?
+* [x] Stack pointer correct?
+* [x] FPU state saved/restored?
+* [x] No corruption after 10k switches
 
 ## 2. Timing Tests (Real-Time Guarantees)
 
@@ -263,14 +263,5 @@ For your level (compiler/OS design):
 * [ ] Prove priority inheritance correctness
 * [ ] Model check scheduling
 
-## If you are building your own RTOS
-
-Tell me:
-
-* [ ] Bare-metal ARM?
-* [ ] RISC-V?
-* [ ] SMP?
 * [ ] Static or dynamic memory?
 * [ ] Safety-critical target?
-
-I can design a professional RTOS test architecture tailored to your system.
