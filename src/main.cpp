@@ -19,6 +19,7 @@
 #include "unittest/math.h"
 #include "unittest/memory.h"
 #include "unittest/psram.h"
+#include "unittest/components/RTOS/RTOS.h"
 #include "unittest/storage.h"
 #include "utility/init.h"
 #include "unittest/initut.h"
@@ -70,14 +71,21 @@ namespace
         auto *context = static_cast<UnitTestTaskContext *>(param);
 
         bool ok = true;
-        ok = runTimedUnitTest("RAM Unit test", &UnitTest::runMemoryTest, true) && ok;
         ok = runTimedUnitTest("Storage Unit test", &UnitTest::runStorageTest, false) && ok;
         ok = runTimedUnitTest("PSRAM Unit test", &UnitTest::runPsramTest, false) && ok;
         ok = runTimedUnitTest("Math Unit test", &UnitTest::runMathTest, false) && ok;
 
         context->allPassed = ok;
         context->done = true;
-        vTaskDelete(nullptr);
+        vTaskSuspend(nullptr);
+    }
+
+    bool runRequiredUnitTests()
+    {
+        bool ok = true;
+        ok = runTimedUnitTest("RTOS Unit test", &UnitTest::runRtosTest, true) && ok;
+        ok = runTimedUnitTest("RAM Unit test", &UnitTest::runMemoryTest, true) && ok;
+        return ok;
     }
 
     void logMemoryProfile()
@@ -102,7 +110,7 @@ String g_ssid;
 String g_password;
 
 // Global device configuration variables
-int DEVICE_ID = 0;
+int DEVICE_ID = 0;  
 String MAC_ADDR;
 
 CyberPi cyber;
@@ -143,7 +151,14 @@ void booting(void)
     cyber.render_lcd();
 
     // Init Unit Test required for init phase (critical tests that must pass for safe operation, otherwise restart)
-    // Unit tests for: RTOS, WiFi, RAM, Security
+    // Unit tests for: RTOS, RAM. Needed: WiFi, Bluetooth, peripheral tests, etc. also Security and Data integrity tests.
+    Display::draw_log(cyber, "Running required unit tests...");
+    if (!runRequiredUnitTests())
+    {
+        Log::sys_error(TAG, "Critical required unit tests failed - restarting...");
+        delay(2000);
+        esp_restart();
+    }
 
     // Init Configuration
     if (!Configuration::loadConfigFromFile("/config/config.yml"))
@@ -240,20 +255,21 @@ void booting(void)
     Daemon::startgIDDaemon();
     Daemon::startBluetoothDaemon();
 
-    Display::draw_log(cyber, "Daemons started. Running unit tests...");
-    // Unit Test (run in dedicated task to avoid main-task stack overflow)
+    Display::draw_log(cyber, "Daemons started. Running optional unit tests...");
+    // Optional Unit Tests (run in dedicated task to avoid main-task stack overflow)
     /**
      * @brief Unit test that are not nessecary at init time. Unit Test required to run are far higher.
      * p2p protocol, security, OTA, server communication, etc., mqtt, etc.
      */
     UnitTestTaskContext testContext = {false, false};
+    TaskHandle_t unitTestTaskHandle = nullptr;
     BaseType_t created = xTaskCreatePinnedToCore(
         runUnitTestsTask,
         "unit_test_task",
         kUnitTestTaskStackSize,
         &testContext,
         tskIDLE_PRIORITY + 1,
-        nullptr,
+        &unitTestTaskHandle,
         xPortGetCoreID());
 
     if (created != pdPASS)
@@ -263,14 +279,32 @@ void booting(void)
         esp_restart();
     }
 
-    while (!testContext.done && optionalTest) // add timeout
-    {
-        delay(10);
-    }
     if (!optionalTest)
-        Log::sys_warning(TAG, "Skip optional test. Don't wait");
+    {
+        Log::sys_warning(TAG, "Skip optional test. Stopping unit test task to free resources");
+        if (unitTestTaskHandle != nullptr)
+        {
+            vTaskDelete(unitTestTaskHandle);
+            unitTestTaskHandle = nullptr;
+        }
+        testContext.done = true;
+    }
+    else
+    {
+        while (!testContext.done) // add timeout
+        {
+            delay(10);
+        }
 
-    if (!testContext.allPassed)
+        if (unitTestTaskHandle != nullptr)
+        {
+            vTaskDelete(unitTestTaskHandle);
+            unitTestTaskHandle = nullptr;
+            Log::sys_info(TAG, "Unit test task finished and was terminated");
+        }
+    }
+
+    if (optionalTest && !testContext.allPassed)
     {
         Log::sys_warning(TAG, "One or more non-critical unit tests failed");
     }
@@ -286,7 +320,7 @@ void booting(void)
     Display::draw_team(cyber);
     delay(3000);
 
-    // Do Init Unit Test.
+    // Do Init state Unit Test.
     if (!UnitTest::initUnitTests())
     {
         Log::sys_error(TAG, "Critical Init Unit Test failed - restarting...");
