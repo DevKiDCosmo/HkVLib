@@ -62,3 +62,18 @@ Stand: automatisch aus dem aktuellen Repo-Status abgeleitet.
 
 
 Add time out for Storage test.
+
+
+Memory leaks
+Slow heap fragmentation death
+Watchdog misconfiguration
+WiFi reconnect instability
+Basic scheduler starvation
+Real-time performance monitoring
+Dynamic network recovery
+Memory and CPU budgeting
+Multi-layered fault tolerance
+
+WiFi over p2p if failure.
+
+Automatic telemtry to mqtt server
