@@ -158,13 +158,32 @@ void SerialDebugCommands::RTOSBgTask()
                                       ? (100.0 * static_cast<double>(task.ulRunTimeCounter) / static_cast<double>(totalRuntime))
                                       : 0.0;
 
-        const char *coreString = "N/A";
+        String coreString = "N/A";
+#if defined(CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID) && (CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID == 1)
+        const BaseType_t coreId = static_cast<BaseType_t>(task.xCoreID);
+#if defined(tskNO_AFFINITY)
+        if (coreId == tskNO_AFFINITY)
+        {
+            coreString = "ANY";
+        }
+        else
+        {
+            coreString = String(coreId);
+        }
+#else
+        coreString = String(coreId);
+#endif
+#elif defined(configNUMBER_OF_CORES) && (configNUMBER_OF_CORES == 1)
+        coreString = "0";
+#else
+        coreString = "ANY";
+#endif
 
         Serial.printf("%-4lu %-20s %-9s %-5s %-6lu %-8lu %-8u %-11lu %7.2f\n",
                       static_cast<unsigned long>(task.xTaskNumber),
                       task.pcTaskName,
                       taskStateToString(task.eCurrentState),
-                      coreString,
+                      coreString.c_str(),
                       static_cast<unsigned long>(task.uxCurrentPriority),
                       static_cast<unsigned long>(task.uxBasePriority),
                       static_cast<unsigned int>(task.usStackHighWaterMark),

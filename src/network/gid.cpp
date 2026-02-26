@@ -22,8 +22,8 @@ void GID::gID(void)
     // Store MAC address globally (safe: String owns its memory)
     MAC_ADDR = macStr;
 
-    // Initialize HTTP client with server configuration
-    HttpRequest httpClient(SERVER, PORT);
+    // Initialize HTTP client with config-aware server configuration
+    HttpRequest httpClient;
 
     Log::sys_info("DHCP_ID", "Requesting device ID from server...");
 

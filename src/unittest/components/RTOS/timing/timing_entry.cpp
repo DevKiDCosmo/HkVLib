@@ -1,5 +1,6 @@
+#include "./timing_entry.h"
+
 #include "./timing.h"
-#include "./timing/timing.h"
 
 namespace UnitTest
 {

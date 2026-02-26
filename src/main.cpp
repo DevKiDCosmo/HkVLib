@@ -19,6 +19,7 @@
 #include "unittest/math.h"
 #include "unittest/memory.h"
 #include "unittest/psram.h"
+#include "unittest/components/certification/certification.h"
 #include "unittest/components/RTOS/RTOS.h"
 #include "unittest/storage.h"
 #include "unittest/corrupt/corrupt.h"
@@ -75,6 +76,7 @@ namespace
         ok = runTimedUnitTest("Storage Unit test", &UnitTest::runStorageTest, false) && ok;
         ok = runTimedUnitTest("PSRAM Unit test", &UnitTest::runPsramTest, false) && ok;
         ok = runTimedUnitTest("Math Unit test", &UnitTest::runMathTest, false) && ok;
+        // ok = runTimedUnitTest("Certification Unit test", &UnitTest::runCertificationSuite, false) && ok;
 
         context->allPassed = ok;
         context->done = true;
@@ -86,6 +88,8 @@ namespace
         bool ok = true;
         ok = runTimedUnitTest("RTOS Unit test", &UnitTest::runRtosTest, true) && ok;
         ok = runTimedUnitTest("RAM Unit test", &UnitTest::runMemoryTest, true) && ok;
+        ok = runTimedUnitTest("Certification Unit test", &UnitTest::runCertificationSuite, false) && ok;
+
         return ok;
     }
 
@@ -111,7 +115,7 @@ String g_ssid;
 String g_password;
 
 // Global device configuration variables
-int DEVICE_ID = 0;  
+int DEVICE_ID = 0;
 String MAC_ADDR;
 
 CyberPi cyber;
@@ -239,7 +243,8 @@ void booting(void)
         }
     }
 
-    g_wifi->setDeviceName(DEVICE_NAME);
+    // TODO: Buggy
+    // g_wifi->setDeviceName(DEVICE_NAME);
 
     Log::sys_info(TAG, "Setup complete. Starting background services...");
 
@@ -405,5 +410,6 @@ extern "C" void app_main(void)
         Log::sys_info(TAG, "Calling App::update() iteration...");
         App::update();
         Log::sys_info(TAG, "App::update() completed");
+        delay(10); // Brief delay to prevent schedule congestion - adjust as needed based on expected processing time and responsiveness requirements
     }
 }

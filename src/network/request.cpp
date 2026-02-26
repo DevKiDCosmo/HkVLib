@@ -3,12 +3,59 @@
 #include <WiFi.h>
 #include "esp_log.h"
 #include "../serial/log.h"
+#include "../config/config.h"
 
 static const char *TAG = "HTTP_REQUEST";
 
+namespace
+{
+    String resolveServer(const String &fallbackServer)
+    {
+        if (Configuration::hasStmt("server"))
+        {
+            const String &configuredServer = Configuration::getExprForStmt("server");
+            if (!configuredServer.isEmpty())
+            {
+                return configuredServer;
+            }
+        }
+
+        return fallbackServer;
+    }
+
+    int resolvePort(int fallbackPort)
+    {
+        if (Configuration::hasStmt("port"))
+        {
+            const String &configuredPort = Configuration::getExprForStmt("port");
+            if (!configuredPort.isEmpty())
+            {
+                const int parsedPort = configuredPort.toInt();
+                if (parsedPort > 0)
+                {
+                    return parsedPort;
+                }
+
+                Log::sys_warning(TAG, "Invalid configured port: " + configuredPort + ", using fallback");
+            }
+        }
+
+        return fallbackPort;
+    }
+}
+
+HttpRequest::HttpRequest()
+{
+    const String server = resolveServer(String(SERVER));
+    const int port = resolvePort(PORT);
+    serverUrl = "http://" + server + ":" + String(port);
+}
+
 HttpRequest::HttpRequest(const String &server, int port)
 {
-    serverUrl = "http://" + server + ":" + String(port);
+    const String resolvedServer = resolveServer(server);
+    const int resolvedPort = resolvePort(port);
+    serverUrl = "http://" + resolvedServer + ":" + String(resolvedPort);
 }
 
 HttpResponse HttpRequest::send(HttpMethod method, const String &endpoint, const String &payload, const String &contentType)

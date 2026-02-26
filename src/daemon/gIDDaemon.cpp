@@ -10,7 +10,7 @@ void gIDDaemonTask(void *pvParameters)
 {
     Log::sys_info(PRIV_DAEMON_TAG, "gID Heartbeat daemon started on Core " + String(xPortGetCoreID()));
 
-    HttpRequest httpClient(SERVER, PORT);
+    HttpRequest httpClient;
     while (true)
     {
         // Check If ID is generated alreaddy. Else request ID

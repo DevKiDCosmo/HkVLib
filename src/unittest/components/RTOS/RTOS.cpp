@@ -1,18 +1,24 @@
 #include "./RTOS.h"
-#include "./concurrency.h"
+#include "./coverage/coverage.h"
+#include "./concurrency/concurrency.h"
 #include "./deadlock_starvation/deadlock_starvation.h"
-#include "./determinism.h"
+#include "./determinism/determinism.h"
 #include "./fault_injection/fault_injection.h"
+#include "./formal_verification/formal_verification.h"
+#include "./fuzz/fuzz.h"
+#include "./hardware_simulation/hardware_simulation.h"
 #include "./ipc/ipc.h"
 #include "./interrupts/interrupts.h"
-#include "./interrupt_behavior.h"
+#include "./interrupts/interrupt_behavior.h"
 #include "./memory_management/memory_management.h"
-#include "./memory_safety.h"
+#include "./port_layer/port_layer.h"
 #include "./power_management/power_management.h"
+#include "./safety_critical/safety_critical.h"
 #include "./scheduler/scheduler.h"
 #include "./smp/smp.h"
+#include "./stress/stress.h"
 #include "./synchronization/synchronization.h"
-#include "./timing.h"
+#include "./timing/timing_entry.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -72,9 +78,15 @@ namespace UnitTest
         ok = runRtosPowerManagementSuite() && ok;
         ok = runRtosSmpSuite() && ok;
         ok = runRtosFaultInjectionSuite() && ok;
+        ok = runRtosStressSuite() && ok;
         ok = runRtosConcurrencyTest() && ok;
         ok = runRtosInterruptBehaviorTest() && ok;
-        ok = runRtosMemorySafetyTest() && ok;
+        ok = runRtosSafetyCriticalSuite() && ok;
+        ok = runRtosPortLayerSuite() && ok;
+        ok = runRtosHardwareVsSimulationSuite() && ok;
+        ok = runRtosCoverageSuite() && ok;
+        ok = runRtosFuzzSuite() && ok;
+        ok = runRtosFormalVerificationSuite() && ok;
 
         if (!ok)
         {

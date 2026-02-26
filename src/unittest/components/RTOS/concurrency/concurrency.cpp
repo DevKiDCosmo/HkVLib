@@ -1,10 +1,12 @@
 #include "./concurrency.h"
 
+#include <cstdint>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
-#include "../../../serial/log.h"
+#include "../../../../serial/log.h"
 
 namespace UnitTest
 {
@@ -74,13 +76,21 @@ namespace UnitTest
         }
 
         const std::uint32_t expected = 1000u;
-        for (int i = 0; i < 2; ++i)
+        std::uint32_t completed = 0u;
+        while (completed < 2u)
         {
-            if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(3000)) == 0)
+            const std::uint32_t signaled = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(3000));
+            if (signaled == 0u)
             {
-                Log::sys_error(kTag, "Worker completion timeout");
+                Log::sys_error(kTag, "Worker completion timeout, completed=" + String(completed));
                 vSemaphoreDelete(context.mutex);
                 return false;
+            }
+
+            completed += signaled;
+            if (completed > 2u)
+            {
+                completed = 2u;
             }
         }
 

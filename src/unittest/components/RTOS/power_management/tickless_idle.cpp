@@ -20,6 +20,14 @@ namespace UnitTest
             return false;
         }
 
+        int deltaMs = static_cast<int>(end - start) * portTICK_PERIOD_MS;
+        if (deltaMs < 80 || deltaMs > 120)
+        {
+            Log::sys_error(kTag, "Tickless/idle delta out of expected range: " + String(deltaMs) + "ms");
+            return false;
+        }
+
+        Log::sys_info(kTag, "Tickless idle delta: " + String(deltaMs) + "ms");
         Log::sys_info(kTag, "Tickless idle baseline successful");
         return true;
     }

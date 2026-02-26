@@ -10,8 +10,8 @@ static void heartbeatDaemonTask(void *pvParameters)
 {
     Log::sys_info(PRIV_DAEMON_TAG, "Heartbeat daemon started on Core " + String(xPortGetCoreID()));
 
-    // Initialize HTTP client with server configuration
-    HttpRequest httpClient(SERVER, PORT);
+    // Initialize HTTP client with config-aware server configuration
+    HttpRequest httpClient;
 
     while (true)
     {
