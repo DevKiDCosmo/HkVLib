@@ -2,5 +2,5 @@
 
 namespace UnitTest
 {
-    bool runStorageTest();
+    bool runFsFileCheck();
 }

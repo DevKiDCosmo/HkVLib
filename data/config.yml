@@ -1,7 +1,7 @@
 wlan_ssid: NAMANAMANAMANAN 
 wlan_pass: Namnamnam
 
-server: 10.190.0.131
+server: 192.168.0.171
 port: 8080
 
 # Only for debug

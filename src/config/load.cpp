@@ -104,10 +104,11 @@ bool Configuration::loadConfigFromFile(const char *filePath)
             std::string value = trim(line.substr(delimiter + 1));
             value = stripWrappingQuotes(value);
 
-            if (key.empty())
-            {
+            if (key[0] == '#')
                 continue;
-            }
+
+            if (key.empty())
+                continue;
 
             s_configEntries.push_back({String(key.c_str()), String(value.c_str())});
 

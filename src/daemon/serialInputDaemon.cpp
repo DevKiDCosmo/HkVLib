@@ -6,6 +6,9 @@
 #include "../serial/commands/debug.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "../nvs/nvs.h"
+
+#include <cstdint>
 
 static const char *PRIV_DAEMON_TAG = "SERIAL";
 
@@ -160,6 +163,12 @@ void serialInputDaemonTask(void *pvParameters)
                 String taskName = input.substring(String("daemon notify").length());
                 taskName.trim();
                 SerialDebugCommands::DaemonNotify(taskName);
+            }
+            else if (input.equalsIgnoreCase("rut"))
+            {
+                // Force Required Unit Tests to run on next boot for testing purposes
+                NVSStore::setUInt(NVSKey::Key::LastRequiredUnitTest, 0xFFFFFFFFu);
+                Log::sys_info(PRIV_DAEMON_TAG, "Required Unit Tests will run on next boot");
             }
         }
 

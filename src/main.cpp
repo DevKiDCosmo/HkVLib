@@ -21,13 +21,13 @@
 #include "unittest/psram.h"
 #include "unittest/components/certification/certification.h"
 #include "unittest/components/RTOS/RTOS.h"
-#include "unittest/storage.h"
+#include "unittest/components/fs/fs.h"
 #include "unittest/corrupt/corrupt.h"
 #include "utility/init.h"
 #include "unittest/initut.h"
 
 #include "display/display.h"
-
+#include "nvs/nvs.h"
 #include "components/cyberpi/src/cyberpi.h"
 
 #define APP_OPERATION_ID 0x01 // Operation ID for main app loop
@@ -39,6 +39,7 @@ namespace
 {
     using UnitTestFn = bool (*)();
     constexpr std::uint32_t kUnitTestTaskStackSize = 12288u;
+    constexpr std::uint32_t kForceRequiredUnitTestsNow = 0xFFFFFFFFu;
 
     struct UnitTestTaskContext
     {
@@ -73,7 +74,7 @@ namespace
         auto *context = static_cast<UnitTestTaskContext *>(param);
 
         bool ok = true;
-        ok = runTimedUnitTest("Storage Unit test", &UnitTest::runStorageTest, false) && ok;
+        ok = runTimedUnitTest("Filesystem Unit test", &UnitTest::runFsMainCheck, false) && ok;
         ok = runTimedUnitTest("PSRAM Unit test", &UnitTest::runPsramTest, false) && ok;
         ok = runTimedUnitTest("Math Unit test", &UnitTest::runMathTest, false) && ok;
         // ok = runTimedUnitTest("Certification Unit test", &UnitTest::runCertificationSuite, false) && ok;
@@ -83,12 +84,25 @@ namespace
         vTaskSuspend(nullptr);
     }
 
-    bool runRequiredUnitTests()
+    bool runRequiredUnitTests(std::uint32_t circle, std::uint32_t lastRequiredRun)
     {
+        if (lastRequiredRun == kForceRequiredUnitTestsNow)
+        {
+            Log::sys_info(TAG, "RUT force flag detected, running required unit tests now");
+        }
+        else if (lastRequiredRun <= circle)
+        {
+            NVSStore::setUInt(NVSKey::Key::LastRequiredUnitTest, lastRequiredRun + 1u);
+            return true;
+        }
+
         bool ok = true;
         ok = runTimedUnitTest("RTOS Unit test", &UnitTest::runRtosTest, true) && ok;
         ok = runTimedUnitTest("RAM Unit test", &UnitTest::runMemoryTest, true) && ok;
         ok = runTimedUnitTest("Certification Unit test", &UnitTest::runCertificationSuite, false) && ok;
+        ok = runTimedUnitTest("Filesystem Unit test", &UnitTest::runFsMainCheck, false) && ok;
+
+        NVSStore::setUInt(NVSKey::Key::LastRequiredUnitTest, 0);
 
         return ok;
     }
@@ -121,6 +135,7 @@ String MAC_ADDR;
 CyberPi cyber;
 uint8_t samples[128];
 int idx = 0;
+uint32_t lastRun = 0;
 
 // ESP-IDF native serial setup (before Arduino initialization)
 static void setup_serial(void)
@@ -133,6 +148,44 @@ void booting(void)
 {
     // ESP-IDF native logging (no Arduino dependency)
     setup_serial();
+
+    // Init Configuration
+    if (!Configuration::loadConfigFromFile("/config/require.yml"))
+        Log::sys_error(TAG, "Failed to load configuration from file - using defaults");
+    else
+    {
+        Log::sys_info(TAG, "Configuration loaded from file successfully");
+        Log::sys_info(TAG, "Config entries loaded: " + String(Configuration::getConfigEntryCount()));
+
+        delay(10);
+
+        for (const auto &entry : Configuration::getConfigEntries())
+        {
+            Log::sys_info(TAG, "Config entry: " + entry.stmt + " = " + entry.expr);
+            delay(10);
+        }
+    }
+
+    // Read in nvs when last rut was done.
+    NVSStore::begin();
+    lastRun = NVSStore::getUInt(NVSKey::Key::LastRequiredUnitTest, 0);
+
+    int circleConfig = Configuration::getExprForStmt("rut_circle").toInt();
+    std::uint32_t circle = static_cast<std::uint32_t>(defualtRUT);
+    if (circleConfig > 0)
+    {
+        circle = static_cast<std::uint32_t>(circleConfig);
+    }
+
+    if (lastRun == kForceRequiredUnitTestsNow || lastRun > circle)
+    {
+        Log::sys_info("NVS", "Next RUT on next boot");
+    }
+    else
+    {
+        Log::sys_info("NVS", "Next RUT in " + String(circle - lastRun) + " init cycles");
+    }
+
     Log::sys_info(TAG, "=================================");
     Log::sys_info(TAG, "HkVLib Firmware Starting");
     Log::sys_info(TAG, "Build: " + String(BUILD) + ", Date: " + String(DATE) + ", Version: " + String(VERSION));
@@ -161,7 +214,7 @@ void booting(void)
     UnitTest::Corrupt::applyBeforeUnitTests();
 #endif
     Display::draw_log(cyber, "Running required unit tests...");
-    if (!runRequiredUnitTests())
+    if (!runRequiredUnitTests(circle, lastRun))
     {
         Log::sys_error(TAG, "Critical required unit tests failed - restarting...");
         delay(2000);
@@ -388,7 +441,7 @@ extern "C" void app_main(void)
         {
             Log::sys_warning(TAG, "Waiting for online lock to be released...");
             delay(1000); // Brief pause to avoid busy loop
-            continue;    // FIXED: was return - which would exit app_main entirely!
+            continue;    // JUST DON'T USE RETURN
         }
 
         const String &disableIdValue = Configuration::getExprForStmt("disable_id");
@@ -410,6 +463,6 @@ extern "C" void app_main(void)
         Log::sys_info(TAG, "Calling App::update() iteration...");
         App::update();
         Log::sys_info(TAG, "App::update() completed");
-        delay(10); // Brief delay to prevent schedule congestion - adjust as needed based on expected processing time and responsiveness requirements
+        delay(10);
     }
 }
