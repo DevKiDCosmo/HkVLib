@@ -3,7 +3,7 @@
 #include "esp_log.h"
 #include "../connectivity/wifi/wifi.h"
 #include "../serial/log.h"
-#include "../serial/commands/debug.h"
+#include "../serial/commands/command_registry.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "../nvs/nvs.h"
@@ -133,42 +133,9 @@ void serialInputDaemonTask(void *pvParameters)
             input.trim();
             Log::sys_infoflag(PRIV_DAEMON_TAG, "Received command: " + input, DEBUG_SERIAL);
 
-            // Process commands here
-            if (input.equalsIgnoreCase("wifi status"))
+            if (!SerialCommandRegistry::dispatch(input))
             {
-                if (g_wifi != nullptr)
-                {
-                    Log::sys_info(PRIV_DAEMON_TAG, "WiFi Status: " + String(g_wifi->isConnected() ? "Connected" : "Disconnected") + ", IP: " + (g_wifi->isConnected() ? g_wifi->getLocalIP() : "N/A"));
-                }
-                else
-                {
-                    Log::sys_warning(PRIV_DAEMON_TAG, "WiFi not initialized");
-                }
-            }
-            else if (input.equalsIgnoreCase("reboot"))
-            {
-                Log::sys_info(PRIV_DAEMON_TAG, "Rebooting system...");
-                esp_restart();
-            }
-            else if (input.equalsIgnoreCase("rtos tasks") || input.equalsIgnoreCase("daemon status"))
-            {
-                SerialDebugCommands::RTOSBgTask();
-            }
-            else if (input.equalsIgnoreCase("display ping") || input.equalsIgnoreCase("display test"))
-            {
-                SerialDebugCommands::DisplayPing();
-            }
-            else if (input.startsWith("daemon notify"))
-            {
-                String taskName = input.substring(String("daemon notify").length());
-                taskName.trim();
-                SerialDebugCommands::DaemonNotify(taskName);
-            }
-            else if (input.equalsIgnoreCase("rut"))
-            {
-                // Force Required Unit Tests to run on next boot for testing purposes
-                NVSStore::setUInt(NVSKey::Key::LastRequiredUnitTest, 0xFFFFFFFFu);
-                Log::sys_info(PRIV_DAEMON_TAG, "Required Unit Tests will run on next boot");
+                Log::sys_warning(PRIV_DAEMON_TAG, "Unknown command: " + input + " (try 'help')");
             }
         }
 
