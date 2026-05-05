@@ -5,7 +5,7 @@
   "platform": "linux/amd64",
 
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/node:2": {},
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers-extra/features/cmake:1": {},
     "ghcr.io/devcontainer-config/features/dot-config:4": {}
