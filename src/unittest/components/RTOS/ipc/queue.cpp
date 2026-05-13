@@ -9,9 +9,42 @@
 
 namespace UnitTest
 {
+    namespace
+    {
+        BaseType_t safeQueueSend(QueueHandle_t queue, const void *item, TickType_t timeout)
+        {
+            if (queue == nullptr)
+            {
+                return pdFAIL;
+            }
+
+            return xQueueSend(queue, item, timeout);
+        }
+
+        BaseType_t safeQueueReceive(QueueHandle_t queue, void *out, TickType_t timeout)
+        {
+            if (queue == nullptr)
+            {
+                return pdFAIL;
+            }
+
+            return xQueueReceive(queue, out, timeout);
+        }
+    } // namespace
+
     bool runRtosQueueTest()
     {
         constexpr const char *kTag = "RTOS_IPC_Q";
+        const std::uint32_t nullProbe = 0x55AAu;
+        std::uint32_t nullOut = 0u;
+
+        if (safeQueueSend(nullptr, &nullProbe, 0) != pdFAIL ||
+            safeQueueReceive(nullptr, &nullOut, 0) != pdFAIL)
+        {
+            Log::sys_error(kTag, "Queue null-handle guard failed");
+            return false;
+        }
+
         QueueHandle_t queue = xQueueCreate(3, sizeof(std::uint32_t));
         if (queue == nullptr)
         {
@@ -37,8 +70,17 @@ namespace UnitTest
 
         std::uint32_t out = 0u;
         ok = (xQueueReceive(queue, &out, pdMS_TO_TICKS(50)) == pdTRUE && out == first) && ok;
+
+        // After freeing one slot from a full queue, sending must succeed again.
+        if (xQueueSend(queue, &fourth, pdMS_TO_TICKS(10)) != pdTRUE)
+        {
+            ok = false;
+            Log::sys_error(kTag, "Queue full-to-free transition failed");
+        }
+
         ok = (xQueueReceive(queue, &out, pdMS_TO_TICKS(50)) == pdTRUE && out == second) && ok;
         ok = (xQueueReceive(queue, &out, pdMS_TO_TICKS(50)) == pdTRUE && out == third) && ok;
+        ok = (xQueueReceive(queue, &out, pdMS_TO_TICKS(50)) == pdTRUE && out == fourth) && ok;
 
         if (xQueueReceive(queue, &out, pdMS_TO_TICKS(10)) == pdTRUE)
         {

@@ -15,6 +15,15 @@ namespace UnitTest
         constexpr const char *kTag = "RTOS_TIME_TICK";
         constexpr std::int64_t kToleranceUs = 35000;
 
+        const TickType_t nearWrap = static_cast<TickType_t>(~static_cast<TickType_t>(0)) - static_cast<TickType_t>(5u);
+        const TickType_t wrapped = static_cast<TickType_t>(nearWrap + static_cast<TickType_t>(10u));
+        const TickType_t wrappedDelta = wrapped - nearWrap;
+        if (wrappedDelta != static_cast<TickType_t>(10u))
+        {
+            Log::sys_error(kTag, "Tick wraparound delta arithmetic failed");
+            return false;
+        }
+
         std::int64_t maxDrift = 0;
         for (int sample = 0; sample < 3; ++sample)
         {

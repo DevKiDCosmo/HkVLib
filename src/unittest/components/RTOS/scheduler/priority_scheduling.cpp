@@ -18,6 +18,20 @@ namespace UnitTest
             volatile bool run;
         };
 
+        struct PriorityProbeContext
+        {
+            TaskHandle_t parent;
+            volatile UBaseType_t observedPriority;
+        };
+
+        void priorityProbeTask(void *param)
+        {
+            auto *ctx = static_cast<PriorityProbeContext *>(param);
+            ctx->observedPriority = uxTaskPriorityGet(nullptr);
+            xTaskNotifyGive(ctx->parent);
+            vTaskDelete(nullptr);
+        }
+
         void lowTask(void *param)
         {
             auto *ctx = static_cast<PriorityContext *>(param);
@@ -58,6 +72,31 @@ namespace UnitTest
     bool runRtosPrioritySchedulingTest()
     {
         constexpr const char *kTag = "RTOS_SCH_PRIO";
+
+        PriorityProbeContext probe{};
+        probe.parent = xTaskGetCurrentTaskHandle();
+
+        const UBaseType_t invalidPriority = configMAX_PRIORITIES + 1u;
+        if (xTaskCreate(priorityProbeTask, "rtos_prio_probe", 2048, &probe, invalidPriority, nullptr) != pdPASS)
+        {
+            Log::sys_error(kTag, "Invalid-priority boundary probe task create failed");
+            return false;
+        }
+
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0)
+        {
+            Log::sys_error(kTag, "Invalid-priority boundary probe timeout");
+            return false;
+        }
+
+        if (probe.observedPriority >= configMAX_PRIORITIES)
+        {
+            Log::sys_error(
+                kTag,
+                "Invalid-priority boundary handling failed: observed=" + String(probe.observedPriority) +
+                    ", max=" + String(configMAX_PRIORITIES));
+            return false;
+        }
 
         PriorityContext context{};
         context.run = true;

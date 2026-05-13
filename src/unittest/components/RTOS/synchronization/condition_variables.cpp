@@ -13,19 +13,25 @@ namespace UnitTest
         {
             TaskHandle_t waiter;
             TaskHandle_t parent;
+            volatile bool waiterReady;
+            volatile bool signalObserved;
+            volatile bool completed;
         };
 
         void waiterTask(void *param)
         {
             auto *ctx = static_cast<NotifyContext *>(param);
             ctx->waiter = xTaskGetCurrentTaskHandle();
+            ctx->waiterReady = true;
             xTaskNotifyGive(ctx->parent);
 
             if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) > 0)
             {
+                ctx->signalObserved = true;
                 xTaskNotifyGive(ctx->parent);
             }
 
+            ctx->completed = true;
             vTaskDelete(nullptr);
         }
     } // namespace
@@ -49,9 +55,9 @@ namespace UnitTest
             return false;
         }
 
-        if (context.waiter == nullptr)
+        if (!context.waiterReady || context.waiter == nullptr)
         {
-            Log::sys_error(kTag, "Waiter handle missing");
+            Log::sys_error(kTag, "Waiter handle/state missing");
             return false;
         }
 
@@ -59,6 +65,12 @@ namespace UnitTest
         if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0)
         {
             Log::sys_error(kTag, "Waiter was not signaled");
+            return false;
+        }
+
+        if (!context.signalObserved || !context.completed)
+        {
+            Log::sys_error(kTag, "Waiter completion handshake failed");
             return false;
         }
 

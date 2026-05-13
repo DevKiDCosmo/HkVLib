@@ -21,6 +21,7 @@ data_callback _mic_callback;
 data_callback _sound_callback;
 static long prev_time = 0;
 static int _loudness;
+Val2Byte val2byte;
 CyberPi::CyberPi()
 {
     _render_ready = xSemaphoreCreateBinary();

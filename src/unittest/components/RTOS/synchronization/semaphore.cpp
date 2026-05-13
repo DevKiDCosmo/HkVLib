@@ -39,11 +39,28 @@ namespace UnitTest
 
         xSemaphoreGive(counting);
         xSemaphoreGive(counting);
-        if (uxSemaphoreGetCount(counting) != 2u)
+        xSemaphoreGive(counting);
+        if (uxSemaphoreGetCount(counting) != 3u)
         {
             vSemaphoreDelete(binary);
             vSemaphoreDelete(counting);
             Log::sys_error(kTag, "Counting semaphore limits failed");
+            return false;
+        }
+
+        if (xSemaphoreGive(counting) != pdFALSE)
+        {
+            vSemaphoreDelete(binary);
+            vSemaphoreDelete(counting);
+            Log::sys_error(kTag, "Counting semaphore double-give negative case failed");
+            return false;
+        }
+
+        if (uxSemaphoreGetCount(counting) != 3u)
+        {
+            vSemaphoreDelete(binary);
+            vSemaphoreDelete(counting);
+            Log::sys_error(kTag, "Counting semaphore max-count invariant failed");
             return false;
         }
 

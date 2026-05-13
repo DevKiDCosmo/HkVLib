@@ -18,11 +18,13 @@ extern "C"
 #define BUTTON_B_IO AW_P0_5
 #define BUTTON_MENU_IO AW_P1_0
 
-union
+typedef union Val2Byte
 {
     uint8_t byteVal[2];
     int16_t shortVal;
-} val2byte;
+} Val2Byte;
+
+extern Val2Byte val2byte;
 
 #define ROUND_X(x) ((int)(x + 0.5f))
 #ifndef MAX
